@@ -511,7 +511,7 @@ void Strafing::update_flak(float dt) {
 				dir = (dir + rng.in_sphere() * 0.02f).normalized();
 				bullets.fire(muzzle, dir * FLAK_SPEED, 1.6f, 2.5f + def->difficulty * 0.6f, 1, -1);
 				if (t.burst_left % 2 == 0) {
-					audio::play("cannon", -18.0f - clampf(dist / 40.0f, 0.0f, 12.0f), rng.range(1.2f, 1.5f));
+					audio::play("flak_gun", -18.0f - clampf(dist / 40.0f, 0.0f, 12.0f), rng.range(1.2f, 1.5f));
 				}
 			}
 			continue;

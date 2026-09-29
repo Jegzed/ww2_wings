@@ -925,9 +925,7 @@ void DebriefScreen::_ready() {
 	anchor(next, Control::PRESET_BOTTOM_RIGHT, Vector2(-60, -50), Vector2(360, 72));
 	next->call_deferred("grab_focus");
 
-	if (r.killed) {
-		audio::play("dirge", -4.0f);
-	} else if (r.success) {
+	if (r.success && !r.killed) {
 		audio::play("fanfare", -5.0f);
 	}
 	audio::play_music("music_diary", -14.0f);

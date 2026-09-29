@@ -15,7 +15,7 @@ using godot::Node;
 using godot::Ref;
 
 // All sounds are synthesised on first use. Known names:
-// engine, engine_enemy, wind, gun, cannon, explosion, flak, hit, ricochet, whistle,
+// engine, engine_enemy, wind, gun, cannon, flak_gun, explosion, flak, hit, ricochet, whistle,
 // bomb_release, click, page, type, fanfare, dirge, music_menu, alarm
 Ref<AudioStreamWAV> stream(const String &name);
 

@@ -410,6 +410,9 @@ Ref<AudioStreamWAV> build(const std::string &n) {
 		return to_stream(synth_gun(14.0f, 110.0f, 0.5f, 14), true);
 	} else if (n == "cannon") {
 		return to_stream(synth_gun(8.0f, 70.0f, 0.5f, 15), true);
+	} else if (n == "flak_gun") {
+		// A single report, for one-shot use (the "cannon" stream loops).
+		return to_stream(synth_gun(8.0f, 70.0f, 0.125f, 27), false);
 	} else if (n == "explosion") {
 		return to_stream(synth_explosion(2.4f, 0.8f, 16), false);
 	} else if (n == "explosion_big") {
@@ -453,6 +456,7 @@ Ref<AudioStreamWAV> stream(const String &name) {
 		return it->second;
 	}
 	Ref<AudioStreamWAV> s = build(key);
+	s->set_name(name);
 	st().streams[key] = s;
 	return s;
 }
@@ -494,7 +498,13 @@ void play(const String &name, float volume_db, float pitch) {
 		chosen = s.pool[s.next];
 		s.next = (s.next + 1) % s.pool.size();
 	}
-	chosen->set_stream(stream(name));
+	Ref<AudioStreamWAV> wav = stream(name);
+	if (wav->get_loop_mode() != AudioStreamWAV::LOOP_DISABLED) {
+		// A looping stream on a fire-and-forget player would never stop.
+		ERR_PRINT(String("audio::play called with looping sound: ") + name);
+		return;
+	}
+	chosen->set_stream(wav);
 	chosen->set_volume_db(volume_db);
 	chosen->set_pitch_scale(MAX(pitch, 0.05f));
 	chosen->play();

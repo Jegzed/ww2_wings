@@ -4,6 +4,7 @@
 #include "core/input_setup.h"
 #include "game/game_state.h"
 
+#include <godot_cpp/classes/audio_stream_player.hpp>
 #include <godot_cpp/classes/audio_stream_wav.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/display_server.hpp>
@@ -210,7 +211,20 @@ void Main::swap_screen() {
 	}
 }
 
+static void report_playing(Node *n, const String &where) {
+	AudioStreamPlayer *p = Object::cast_to<AudioStreamPlayer>(n);
+	if (p && p->is_playing() && p->get_stream().is_valid()) {
+		UtilityFunctions::print("AUDIO ", where, ": ", p->get_stream()->get_name(), " vol=", p->get_volume_db(), " path=", p->get_path());
+	}
+	for (int i = 0; i < n->get_child_count(); i++) {
+		report_playing(n->get_child(i), where);
+	}
+}
+
 void Main::capture(const String &suffix) {
+	if (tour) {
+		report_playing(this, suffix);
+	}
 	Ref<Image> img = get_viewport()->get_texture()->get_image();
 	if (img.is_valid()) {
 		String path = shot_dir.path_join((shot_label.is_empty() ? shot_name : shot_label) + String("_") + suffix + String(".png"));
