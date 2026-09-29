@@ -1,0 +1,9 @@
+build/
+game/.godot/
+game/bin/*.dll
+game/bin/*.pdb
+game/bin/*.exp
+game/bin/*.lib
+game/bin/~*
+shots/
+*.tmp
