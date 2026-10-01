@@ -52,8 +52,8 @@ void Bombing::scatter_scenery(Rng &rng, float length) {
 	int count = (int)(length * 0.22f);
 	for (int i = 0; i < count; i++) {
 		Vector3 p(rng.range(-520.0f, 520.0f), 0.0f, rng.range(-length - 400.0f, 300.0f));
-		if (std::fabs(p.x) < 34.0f) {
-			continue; // keep the line of flight clear
+		if (std::fabs(p.x) < 34.0f || (def->variant == BM_HARBOUR && p.x < 0.0f)) {
+			continue; // keep the line of flight (and the water) clear
 		}
 		bool blocked = false;
 		for (const GroundTarget &t : ground.targets) {
@@ -217,6 +217,170 @@ void Bombing::layout_bridge(Rng &rng) {
 	mat->set_shader_parameter("river_amount", 0.0f);
 }
 
+
+void Bombing::layout_convoy(Rng &rng) {
+	run_length = 3300.0f;
+	// Armour and soft-skins in road groups, all rolling toward the front.
+	for (int g = 0; g < 5; g++) {
+		float z = -650.0f - g * 520.0f + rng.range(-60.0f, 60.0f);
+		int n = rng.irange(5, 8);
+		for (int i = 0; i < n; i++) {
+			const char *kind = "truck";
+			float pick = rng.f();
+			if (pick < 0.3f) {
+				kind = "tank";
+			} else if (pick < 0.5f) {
+				kind = "halftrack";
+			} else if (pick < 0.58f) {
+				kind = "staff_car";
+			}
+			int idx = ground.add(kind, Vector3(rng.range(-1.2f, 1.2f), 0, z - i * rng.range(16.0f, 22.0f)), 0.0f, true);
+			ground.targets[idx].speed = 8.0f;
+			if (String(kind) == "halftrack" && rng.chance(0.5f)) {
+				ground.targets[idx].is_flak = true;
+			}
+		}
+	}
+	add_farm(rng, Vector3(-170.0f, 0, -900.0f));
+	add_village(rng, Vector3(210.0f, 0, -1700.0f), true);
+	add_farm(rng, Vector3(160.0f, 0, -2600.0f));
+	int flak = 1 + def->difficulty / 2;
+	for (int i = 0; i < flak; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		ground.add("flak", Vector3(side * rng.range(40.0f, 70.0f), 0, -900.0f - i * 900.0f), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(0.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 4.5f);
+	mat->set_shader_parameter("strip_a_kind", 1);
+	mat->set_shader_parameter("strip_b", Vector4(0.0f, -1700.0f, 1.0f, 0.15f));
+	mat->set_shader_parameter("strip_b_width", 3.0f);
+	mat->set_shader_parameter("strip_b_kind", 1);
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
+void Bombing::layout_harbour(Rng &rng) {
+	run_length = 3000.0f;
+	const float basin0 = 900.0f;
+	const float basin1 = 2500.0f;
+	// Barges moored along the quay in rows, more out in the basin.
+	for (float z = -basin0 - 120.0f; z > -basin1 + 100.0f; z -= rng.range(70.0f, 110.0f)) {
+		ground.add("barge", Vector3(-24.0f + rng.range(-2.0f, 2.0f), 0, z), rng.range(-4.0f, 4.0f), true);
+		if (rng.chance(0.6f)) {
+			ground.add("barge", Vector3(-34.0f + rng.range(-1.0f, 1.0f), 0, z + rng.range(-6.0f, 6.0f)), rng.range(-4.0f, 4.0f), true);
+		}
+		if (rng.chance(0.35f)) {
+			ground.add("barge", Vector3(rng.range(-95.0f, -60.0f), 0, z + rng.range(-10.0f, 10.0f)), rng.range(0, 360.0f), true);
+		}
+	}
+	for (int i = 0; i < 4; i++) {
+		ground.add("warehouse", Vector3(24.0f, 0, -basin0 - 200.0f - i * 380.0f + rng.range(-30.0f, 30.0f)), 0.0f, true);
+		ground.add("crate_stack", Vector3(8.0f, 0, -basin0 - 260.0f - i * 380.0f), rng.range(0, 360.0f), true);
+		ground.add("truck", Vector3(6.0f, 0, -basin0 - 330.0f - i * 380.0f), 0.0f, true);
+	}
+	for (int i = 0; i < 3; i++) {
+		ground.add("fuel_tank", Vector3(62.0f + (i % 2) * 15.0f, 0, -basin0 - 900.0f - i * 15.0f), 0.0f, true);
+	}
+	ground.add("tower", Vector3(40.0f, 0, -basin0 - 60.0f), 0.0f, true);
+	add_village(rng, Vector3(150.0f, 0, -1100.0f), true);
+	add_village(rng, Vector3(170.0f, 0, -2100.0f), false);
+
+	int flak = 2 + def->difficulty;
+	for (int i = 0; i < flak; i++) {
+		float x = (i % 2 == 0) ? rng.range(40.0f, 80.0f) : rng.range(-140.0f, -110.0f);
+		ground.add("flak", Vector3(x, 0, -basin0 - 80.0f - i * (basin1 - basin0) / flak), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(46.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 4.0f);
+	mat->set_shader_parameter("strip_a_kind", 1);
+	mat->set_shader_parameter("strip_b", Vector4(-62.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_b_width", 58.0f);
+	mat->set_shader_parameter("strip_b_kind", 5);
+	mat->set_shader_parameter("strip_b_range", Vector2(basin0 - 200.0f, basin1 + 300.0f));
+	mat->set_shader_parameter("strip_c", Vector4(-8.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_c_width", 10.0f);
+	mat->set_shader_parameter("strip_c_kind", 3);
+	mat->set_shader_parameter("strip_c_range", Vector2(basin0, basin1));
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
+void Bombing::layout_launch_site(Rng &rng) {
+	run_length = 2900.0f;
+	const float site_z = -1900.0f;
+	primary = ground.add("ramp", Vector3(0, 0, site_z), -18.0f, true);
+	ground.targets[primary].primary = true;
+	ground.add("storage", Vector3(-70.0f, 0, site_z + 80.0f), 80.0f, true);
+	ground.add("storage", Vector3(75.0f, 0, site_z - 40.0f), -95.0f, true);
+	ground.add("house", Vector3(-45.0f, 0, site_z + 160.0f), 20.0f, true);
+	ground.add("fuel_tank", Vector3(48.0f, 0, site_z + 130.0f), 0.0f, true);
+	ground.add("crate_stack", Vector3(30.0f, 0, site_z + 100.0f), 10.0f, true);
+	ground.add("crate_stack", Vector3(-20.0f, 0, site_z + 60.0f), 50.0f, true);
+	for (int i = 0; i < 4; i++) {
+		ground.add("truck", Vector3(-30.0f + i * 9.0f, 0, site_z + 200.0f), 90.0f, true);
+	}
+	add_farm(rng, Vector3(190.0f, 0, -700.0f));
+	add_village(rng, Vector3(-220.0f, 0, -1200.0f), true);
+	add_farm(rng, Vector3(180.0f, 0, -2500.0f));
+
+	int flak = 3 + def->difficulty;
+	for (int i = 0; i < flak; i++) {
+		float a = TAU_F * i / flak + rng.range(-0.3f, 0.3f);
+		float r = rng.range(120.0f, 200.0f);
+		ground.add("flak", Vector3(std::cos(a) * r, 0, site_z + std::sin(a) * r), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(20.0f, 0.0f, 0.05f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 3.2f);
+	mat->set_shader_parameter("strip_a_kind", 1);
+	mat->set_shader_parameter("wood_amount", 1.0f);
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
+void Bombing::layout_airfield(Rng &rng) {
+	run_length = 3000.0f;
+	const float field0 = 700.0f;
+	const float field1 = 2500.0f;
+	for (float z = -field0 - 120.0f; z > -field1 + 150.0f; z -= rng.range(50.0f, 80.0f)) {
+		for (int side = -1; side <= 1; side += 2) {
+			if (rng.chance(0.7f)) {
+				ground.add(rng.chance(0.35f) ? "plane_fw190" : "plane_bf109", Vector3(side * rng.range(30.0f, 46.0f), 0, z),
+						(side > 0 ? 90.0f : -90.0f) + rng.range(-25.0f, 25.0f), true);
+			}
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		ground.add("hangar", Vector3(side * 95.0f, 0, -field0 - 350.0f - i * 600.0f), side > 0 ? -90.0f : 90.0f, true);
+	}
+	for (int i = 0; i < 3; i++) {
+		ground.add("fuel_tank", Vector3(-60.0f - (i % 2) * 14.0f, 0, -field0 - 980.0f - i * 15.0f), 0.0f, true);
+	}
+	ground.add("tower", Vector3(62.0f, 0, -field0 - 900.0f), 0.0f, true);
+	ground.add("warehouse", Vector3(70.0f, 0, -field0 - 1500.0f), 0.0f, true);
+	int flak = 2 + def->difficulty;
+	for (int i = 0; i < flak; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		ground.add("flak", Vector3(side * rng.range(56.0f, 75.0f), 0, -field0 + 60.0f - i * (field1 - field0) / flak),
+				rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(0.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 20.0f);
+	mat->set_shader_parameter("strip_a_kind", 3);
+	mat->set_shader_parameter("strip_a_range", Vector2(field0, field1));
+	mat->set_shader_parameter("strip_b", Vector4(38.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_b_width", 5.0f);
+	mat->set_shader_parameter("strip_b_kind", 3);
+	mat->set_shader_parameter("strip_b_range", Vector2(field0 + 60.0f, field1 - 60.0f));
+	mat->set_shader_parameter("field_rect", Vector4(0.0f, -(field0 + field1) * 0.5f, 210.0f, (field1 - field0) * 0.5f + 60.0f));
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
 void Bombing::build() {
 	GameState &gs = GameState::get();
 
@@ -233,6 +397,7 @@ void Bombing::build() {
 	terrain = build_terrain(this, terrain_mat, 12000.0f);
 	terrain_mat->set_shader_parameter("field_scale", 120.0f);
 	terrain_mat->set_shader_parameter("wood_amount", 0.0f);
+	opt.cloud_cover = def->cloud_cover;
 
 	ground.setup(this);
 	ground.fx_scale = 1.3f;
@@ -257,10 +422,26 @@ void Bombing::build() {
 	};
 
 	Rng rng(101 + def->variant * 17);
-	if (def->variant == 1) {
-		layout_bridge(rng);
-	} else {
-		layout_rail_yard(rng);
+	switch (def->variant) {
+		case BM_BRIDGE:
+			layout_bridge(rng);
+			break;
+		case BM_CONVOY:
+			layout_convoy(rng);
+			break;
+		case BM_HARBOUR:
+			layout_harbour(rng);
+			break;
+		case BM_LAUNCH_SITE:
+			layout_launch_site(rng);
+			break;
+		case BM_AIRFIELD:
+			layout_airfield(rng);
+			break;
+		case BM_RAILYARD:
+		default:
+			layout_rail_yard(rng);
+			break;
 	}
 	scatter_scenery(rng, run_length);
 
@@ -306,7 +487,7 @@ void Bombing::build() {
 	camera->make_current();
 
 	bombs_total = 12 + gs.pilot.skills[SKILL_MECHANICAL] / 2;
-	if (def->variant == 1) {
+	if (primary >= 0) {
 		bombs_total -= 2;
 	}
 	bombs_left = bombs_total;
@@ -324,7 +505,8 @@ void Bombing::build() {
 // ---------------------------------------------------------------------------
 
 int Bombing::required() const {
-	return MAX(1, (int)std::ceil(ground.total() * 0.2f));
+	float share = def->variant == BM_RAILYARD ? 0.2f : 0.3f;
+	return MAX(1, (int)std::ceil(ground.total() * share));
 }
 
 bool Bombing::objective_met() const {
@@ -701,7 +883,8 @@ void Bombing::draw_hud(Canvas *c) {
 	// Objective, top-right.
 	if (primary >= 0) {
 		const GroundTarget &b = ground.targets[primary];
-		c->text_shadowed(title, Vector2(size.x - 560, 70), b.alive ? "BRIDGE STANDING" : "BRIDGE DESTROYED", 40,
+		String what = def->variant == BM_BRIDGE ? "BRIDGE" : "RAMP";
+		c->text_shadowed(title, Vector2(size.x - 560, 70), what + String(b.alive ? " STANDING" : " DESTROYED"), 40,
 				b.alive ? red : ui::AMBER, 2, 500);
 		draw_bar(c, Vector2(size.x - 400, 86), Vector2(340, 16), b.alive ? b.hp / b.max_hp : 0.0f, red, "");
 		c->text_shadowed(title, Vector2(size.x - 560, 140),

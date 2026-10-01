@@ -282,6 +282,7 @@ uniform vec2 strip_c_range = vec2(-1e6, 1e6);
 uniform vec4 field_rect = vec4(0.0); // airfield: centre xz, half size xz
 uniform float river_amount = 1.0;
 uniform float wood_amount = 1.0;
+uniform float coast_x = -1e6; // sea lies at x < coast_x (only if > -1e5)
 uniform float town_amount = 0.0;
 
 varying vec3 wpos;
@@ -446,6 +447,29 @@ void fragment() {
 		s.col = mix(s.col, vec3(0.04, 0.10, 0.11), water * river_amount);
 		s.rough = mix(s.rough, 0.07, water * river_amount);
 		s.water = water * river_amount;
+	}
+
+	// Coastline: sea to the west of coast_x, a beach in between.
+	if (coast_x > -1e5) {
+		float shore = coast_x + (fbm(vec2(p.y * 0.003, 4.0)) - 0.5) * 30.0;
+		float d = p.x - shore; // positive inland
+		float sand = 1.0 - smoothstep(38.0, 50.0, d);
+		float wet = 1.0 - smoothstep(0.0, 12.0, d);
+		vec3 sandc = mix(vec3(0.72, 0.65, 0.48), vec3(0.50, 0.44, 0.32), wet) * (0.9 + 0.2 * vnoise(p * 0.3));
+		// Dunes: mottled grass over sand near the top of the beach.
+		float dune = smoothstep(26.0, 50.0, d) * step(0.5, vnoise(p * 0.08));
+		sandc = mix(sandc, vec3(0.42, 0.45, 0.22), dune * 0.5);
+		s.col = mix(s.col, sandc, sand);
+		s.rough = mix(s.rough, 0.9, sand);
+		float water = 1.0 - smoothstep(-1.5, 1.5, d);
+		vec3 sea = mix(vec3(0.06, 0.17, 0.20), vec3(0.03, 0.09, 0.14), smoothstep(0.0, -220.0, d));
+		// Lines of surf rolling in.
+		float surf = smoothstep(0.55, 0.95, sin(d * 0.35 + TIME * 1.6 + vnoise(vec2(p.y * 0.05, 1.0)) * 4.0));
+		surf *= smoothstep(-60.0, -4.0, d) * (1.0 - smoothstep(-4.0, 0.0, d));
+		sea = mix(sea, vec3(0.85, 0.88, 0.86), surf * 0.8);
+		s.col = mix(s.col, sea, water);
+		s.rough = mix(s.rough, 0.08, water);
+		s.water = max(s.water, water);
 	}
 
 	// Airfield grass.

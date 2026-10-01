@@ -59,6 +59,27 @@ int Dogfight::spawn(models::PlaneType type, mats::PaintScheme scheme, int team, 
 			a.pitch_max = 42.0f;
 			a.max_hp = 85.0f;
 			break;
+		case models::PLANE_B26:
+			a.role = 1;
+			a.max_speed = 118.0f;
+			a.roll_max = 22.0f;
+			a.pitch_max = 8.0f;
+			a.max_hp = 240.0f;
+			break;
+		case models::PLANE_JU88:
+			a.role = 1;
+			a.max_speed = 112.0f;
+			a.roll_max = 24.0f;
+			a.pitch_max = 8.0f;
+			a.max_hp = 190.0f;
+			break;
+		case models::PLANE_V1:
+			a.role = 2;
+			a.max_speed = 172.0f;
+			a.roll_max = 10.0f;
+			a.pitch_max = 5.0f;
+			a.max_hp = 30.0f;
+			break;
 		default:
 			a.max_speed = 162.0f;
 			a.roll_max = 112.0f;
@@ -70,7 +91,8 @@ int Dogfight::spawn(models::PlaneType type, mats::PaintScheme scheme, int team, 
 		a.max_hp = 100.0f;
 	}
 	a.hp = a.max_hp;
-	a.speed = a.max_speed * 0.75f;
+	a.speed = a.role == 0 ? a.max_speed * 0.75f : a.max_speed;
+	a.throttle = a.role == 0 ? 0.8f : 1.0f;
 	a.node->set_transform(Transform3D(a.basis, a.pos));
 	planes.push_back(a);
 	return (int)planes.size() - 1;
@@ -83,7 +105,7 @@ void Dogfight::build() {
 	opt.time = def->time;
 	opt.shadow_distance = 260.0f;
 	opt.fog_density = 0.00011f;
-	opt.cloud_cover = 0.4f;
+	opt.cloud_cover = def->cloud_cover;
 	opt.sun_azimuth_deg = 150.0f;
 	world = build_world(this, opt);
 
@@ -94,31 +116,111 @@ void Dogfight::build() {
 	build_clouds(this, rng, 150, 8000.0f, 900.0f, 2700.0f, 210.0f);
 
 	const float alt = 2000.0f;
-	spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, alt, 0), 0.0f, 0.9f, true, "You");
-
-	int wingmen = def->difficulty >= 3 ? 2 : 1;
+	const int variant = def->variant;
+	const float skill = 0.42f + 0.08f * def->difficulty;
 	const char *names[] = { "Mac", "Kowalski" };
-	for (int i = 0; i < wingmen; i++) {
-		float side = i == 0 ? 1.0f : -1.0f;
-		spawn(models::PLANE_P47, i == 0 ? mats::PAINT_P47_OLIVE : mats::PAINT_P47_SILVER, 0,
-				Vector3(45.0f * side, alt - 12.0f, 50.0f + i * 25.0f), 0.0f, 0.62f, false, names[i]);
-	}
 
-	int enemies = 2 + def->difficulty;
-	if (demo) {
-		enemies = MAX(enemies, 4);
-	}
-	initial_enemies = enemies;
-	float skill = 0.42f + 0.08f * def->difficulty;
-	for (int i = 0; i < enemies; i++) {
-		bool fw = def->variant >= 1 && (i % 2 == 1);
-		bool ace = (i == 0 && def->difficulty >= 3);
-		float x = (i - (enemies - 1) * 0.5f) * 140.0f;
-		float dist = demo ? 900.0f : 2600.0f;
-		Vector3 pos(x, alt + 150.0f + (i % 3) * 60.0f, -dist - (i % 2) * 180.0f);
-		spawn(fw ? models::PLANE_FW190 : models::PLANE_BF109,
-				fw ? mats::PAINT_FW190 : (ace ? mats::PAINT_BF109_ACE : mats::PAINT_BF109_GREY), 1, pos, 180.0f,
-				ace ? skill + 0.15f : skill, false, "Bandit");
+	auto add_wingmen = [&](int count, const Vector3 &lead) {
+		for (int i = 0; i < count; i++) {
+			float side = i == 0 ? 1.0f : -1.0f;
+			spawn(models::PLANE_P47, i == 0 ? mats::PAINT_P47_OLIVE : mats::PAINT_P47_SILVER, 0,
+					lead + Vector3(45.0f * side, -12.0f, 50.0f + i * 25.0f), 0.0f, 0.62f, false, names[i]);
+		}
+	};
+
+	switch (variant) {
+		case DF_ESCORT: {
+			// The box flies straight down the track; the fight comes to it.
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, alt + 150.0f, 0), 0.0f, 0.9f, true, "You");
+			add_wingmen(def->difficulty >= 3 ? 2 : 1, Vector3(0, alt + 150.0f, 0));
+			bombers_total = 6;
+			objective_z = -9500.0f;
+			for (int i = 0; i < bombers_total; i++) {
+				Vector3 slot((i % 2 == 0 ? -1.0f : 1.0f) * (30.0f + (i / 2) * 20.0f), alt - (i / 2) * 15.0f,
+						-250.0f + (i / 2) * 60.0f);
+				int b = spawn(models::PLANE_B26, mats::PAINT_B26, 0, slot, 0.0f, 0.3f, false, "Marauder");
+				planes[b].waypoint = slot + Vector3(0, 0, -30000.0f);
+			}
+			waves_total = def->difficulty >= 3 ? 3 : 2;
+			spawn_wave(2 + def->difficulty / 2, Vector3(0, alt, -250.0f), def->difficulty >= 3);
+			wave = 1;
+			spawn_timer = 38.0f;
+			message("Little friends on station. Stay with the box.", 4.0f, ui::AMBER);
+		} break;
+		case DF_INTERCEPT: {
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, 1700.0f, 0), 0.0f, 0.9f, true, "You");
+			add_wingmen(def->difficulty >= 3 ? 2 : 1, Vector3(0, 1700.0f, 0));
+			bombers_total = 4 + def->difficulty / 2;
+			objective_z = 2600.0f; // the anchorage lies behind you
+			for (int i = 0; i < bombers_total; i++) {
+				Vector3 slot((i % 2 == 0 ? -1.0f : 1.0f) * (35.0f + (i / 2) * 25.0f), 950.0f - (i / 2) * 12.0f,
+						-4600.0f - (i / 2) * 70.0f);
+				int b = spawn(models::PLANE_JU88, mats::PAINT_JU88, 1, slot, 180.0f, 0.3f, false, "Junkers");
+				planes[b].waypoint = slot + Vector3(0, 0, 30000.0f);
+			}
+			int escorts = def->difficulty >= 3 ? 2 : 0;
+			for (int i = 0; i < escorts; i++) {
+				spawn(models::PLANE_BF109, mats::PAINT_BF109_GREY, 1, Vector3((i == 0 ? -1.0f : 1.0f) * 220.0f, 1250.0f, -4300.0f),
+						180.0f, skill, false, "Bandit");
+			}
+			initial_enemies = bombers_total + escorts;
+			message("Bombers inbound, twelve o'clock low!", 4.0f, ui::AMBER);
+		} break;
+		case DF_DIVER: {
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, 1750.0f, 0), 0.0f, 0.9f, true, "You");
+			missiles_total = 4 + def->difficulty / 2;
+			spawn_timer = 3.0f;
+			message("Diver, diver! Flying bombs crossing the coast.", 4.0f, ui::AMBER);
+		} break;
+		case DF_AMBUSH: {
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, alt, 0), 0.0f, 0.9f, true, "You");
+			add_wingmen(1, Vector3(0, alt, 0));
+			int enemies = 1 + def->difficulty;
+			initial_enemies = enemies;
+			for (int i = 0; i < enemies; i++) {
+				bool fw = (i % 2 == 1);
+				float x = (i - (enemies - 1) * 0.5f) * 90.0f;
+				Vector3 pos(x, alt + 160.0f + (i % 2) * 40.0f, 700.0f + (i % 3) * 70.0f);
+				int e = spawn(fw ? models::PLANE_FW190 : models::PLANE_BF109, fw ? mats::PAINT_FW190 : mats::PAINT_BF109_GREY,
+						1, pos, 0.0f, skill + 0.05f, false, "Bandit");
+				planes[e].target = i < 2 ? 0 : 1;
+				planes[e].retarget = 6.0f;
+				planes[e].burst = 0.0f;
+			}
+			message("Break! Bandits six o'clock high!", 4.0f, ui::RED);
+		} break;
+		case DF_ACE: {
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, alt, 0), 0.0f, 0.9f, true, "You");
+			initial_enemies = 1;
+			int e = spawn(models::PLANE_BF109, mats::PAINT_BF109_ACE, 1, Vector3(300.0f, alt + 450.0f, -2200.0f), 180.0f, 0.97f,
+					false, "Red Nose");
+			planes[e].max_hp = planes[e].hp = 150.0f;
+			planes[e].max_speed = 160.0f;
+			planes[e].roll_max = 125.0f;
+			planes[e].pitch_max = 50.0f;
+			message("There he is. Red nose, high and to the right.", 4.0f, ui::AMBER);
+		} break;
+		case DF_SWEEP:
+		default: {
+			spawn(models::PLANE_P47, mats::PAINT_P47_SILVER, 0, Vector3(0, alt, 0), 0.0f, 0.9f, true, "You");
+			add_wingmen(def->difficulty >= 3 ? 2 : 1, Vector3(0, alt, 0));
+			int enemies = 2 + def->difficulty;
+			if (demo) {
+				enemies = MAX(enemies, 4);
+			}
+			initial_enemies = enemies;
+			for (int i = 0; i < enemies; i++) {
+				bool fw = def->difficulty >= 3 && (i % 2 == 1);
+				bool ace = (i == 0 && def->difficulty >= 3);
+				float x = (i - (enemies - 1) * 0.5f) * 140.0f;
+				float dist = demo ? 900.0f : 2600.0f;
+				Vector3 pos(x, alt + 150.0f + (i % 3) * 60.0f, -dist - (i % 2) * 180.0f);
+				spawn(fw ? models::PLANE_FW190 : models::PLANE_BF109,
+						fw ? mats::PAINT_FW190 : (ace ? mats::PAINT_BF109_ACE : mats::PAINT_BF109_GREY), 1, pos, 180.0f,
+						ace ? skill + 0.15f : skill, false, "Bandit");
+			}
+			message("Bandits, twelve o'clock high!", 4.0f, ui::AMBER);
+		} break;
 	}
 
 	bullets.setup(this, 500, 16.0f, 0.16f);
@@ -139,8 +241,23 @@ void Dogfight::build() {
 	snd_gun = audio::make_loop(this, "gun", -5.0f);
 	snd_enemy_gun = audio::make_loop(this, "cannon", -12.0f);
 	snd_alarm = audio::make_loop(this, "alarm", -14.0f);
+}
 
-	message("Bandits, twelve o'clock high!", 4.0f, ui::AMBER);
+void Dogfight::spawn_wave(int count, const Vector3 &around, bool fw_mix) {
+	Rng &rng = grng();
+	const float skill = 0.42f + 0.08f * def->difficulty;
+	float side = rng.chance(0.5f) ? 1.0f : -1.0f;
+	for (int i = 0; i < count; i++) {
+		bool fw = fw_mix && (i % 2 == 1);
+		Vector3 pos = around + Vector3(side * 1400.0f + i * 120.0f * side, 500.0f + (i % 2) * 90.0f, -2400.0f - i * 150.0f);
+		int e = spawn(fw ? models::PLANE_FW190 : models::PLANE_BF109, fw ? mats::PAINT_FW190 : mats::PAINT_BF109_GREY, 1,
+				pos, 180.0f + side * 25.0f, skill, false, "Bandit");
+		planes[e].node->set_transform(Transform3D(planes[e].basis, planes[e].pos));
+	}
+	initial_enemies += count;
+	if (wave > 0) {
+		message("More bandits coming in!", 3.0f, ui::RED);
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -180,6 +297,23 @@ Dogfight::Controls Dogfight::control_ai(int index, float dt) {
 	Vector3 fwd = forward_of(a.basis);
 	Vector3 right = right_of(a.basis);
 
+	// Bombers and flying bombs hold course for their waypoint and never fight back with the stick.
+	if (a.role != 0) {
+		c.throttle = 1.0f;
+		Vector3 to = a.waypoint - a.pos;
+		to.y = 0.0f;
+		Vector3 goal = to.length_squared() > 1.0f ? to.normalized() : fwd;
+		// Hold altitude.
+		goal.y = clampf((a.waypoint.y - a.pos.y) * 0.002f, -0.08f, 0.08f);
+		goal.normalize();
+		Vector3 local = a.basis.xform_inv(goal);
+		float bank = std::asin(clampf(-right.y, -1.0f, 1.0f));
+		c.roll = clampf(local.x * 3.0f - bank * 1.5f, -1.0f, 1.0f);
+		c.pitch = clampf(local.y * 6.0f, -1.0f, 1.0f);
+		a.assist = goal;
+		return c;
+	}
+
 	// Target selection.
 	a.retarget -= dt;
 	bool target_ok = a.target >= 0 && planes[a.target].alive && !planes[a.target].dying;
@@ -193,6 +327,12 @@ Dogfight::Controls Dogfight::control_ai(int index, float dt) {
 				continue;
 			}
 			float d = o.pos.distance_squared_to(a.pos);
+			if (o.role == 1) {
+				d *= 0.3f; // bombers are what everyone is here for
+			}
+			if (o.role == 2) {
+				d *= 0.6f;
+			}
 			// Count how many friends already chase this one, to spread out.
 			int chasers = 0;
 			for (int k = 0; k < (int)planes.size(); k++) {
@@ -250,7 +390,7 @@ Dogfight::Controls Dogfight::control_ai(int index, float dt) {
 		if (off < deg2rad(12.0f)) {
 			a.assist = goal;
 		}
-		if (dist < 95.0f) {
+		if (dist < (t.role == 1 ? 60.0f : 95.0f)) {
 			// Too close: break away rather than ram.
 			a.evade_time = rng.range(1.5f, 3.0f);
 			float side = rng.chance(0.5f) ? 1.0f : -1.0f;
@@ -258,6 +398,12 @@ Dogfight::Controls Dogfight::control_ai(int index, float dt) {
 		}
 		if (dist < 350.0f && a.speed > t.speed + 5.0f && off < deg2rad(30.0f)) {
 			c.throttle = 0.45f;
+		}
+		// A good pilot will not trade shots head-on.
+		if (a.skill > 0.85f && dist < 900.0f && forward_of(t.basis).dot(fwd) < -0.6f && off < deg2rad(20.0f)) {
+			a.evade_time = rng.range(1.2f, 2.0f);
+			float side = rng.chance(0.5f) ? 1.0f : -1.0f;
+			a.evade_dir = (right * side * 0.6f + fwd * 0.4f + Vector3(0, 0.7f, 0)).normalized();
 		}
 
 		// Someone on my tail?
@@ -313,7 +459,7 @@ Dogfight::Controls Dogfight::control_ai(int index, float dt) {
 
 void Dogfight::simulate(Aircraft &a, const Controls &c, float dt) {
 	GameState &gs = GameState::get();
-	float handling = a.player ? gs.handling() : 1.0f;
+	float handling = a.player ? gs.handling() : (a.skill > 0.9f ? 1.12f : 1.0f);
 	float eff = clampf(a.speed / 85.0f, 0.25f, 1.0f);
 	// Controls stiffen at very high speed.
 	eff *= 1.0f - 0.35f * saturate((a.speed - a.max_speed) / (a.max_speed * 0.35f));
@@ -434,6 +580,9 @@ void Dogfight::update_bullets(float dt) {
 			if (b.owner == 0) {
 				radius *= 1.35f; // a little generosity for the player
 			}
+			if (b.owner >= 0 && planes[b.owner].role == 1 && p.player) {
+				radius *= 0.6f; // gunners are not that good
+			}
 			Vector3 rel = p.pos - b.prev;
 			float t = clampf(rel.dot(dir), 0.0f, seg_len);
 			Vector3 closest = b.prev + dir * t;
@@ -521,8 +670,39 @@ void Dogfight::kill(int victim, int attacker) {
 	v.dying_time = 0.0f;
 	v.spin = grng().chance(0.5f) ? 1.0f : -1.0f;
 	v.hp = 0.0f;
+	if (v.role == 2) {
+		// A flying bomb goes off all at once, and takes anything close with it.
+		fx::explosion(this, v.pos, 14.0f, false);
+		audio::play("explosion_big", 2.0f + distance_gain(v.pos), grng().range(0.9f, 1.1f));
+		v.dying = false;
+		v.alive = false;
+		v.node->queue_free();
+		v.node = nullptr;
+		missiles_down++;
+		for (int i = 0; i < (int)planes.size(); i++) {
+			Aircraft &o = planes[i];
+			if (!o.alive || o.role == 2) {
+				continue;
+			}
+			float d = o.pos.distance_to(v.pos);
+			if (d < 110.0f) {
+				damage(i, 45.0f * (1.0f - d / 110.0f), -1);
+				if (o.player) {
+					shake(1.0f);
+				}
+			}
+		}
+		if (attacker == 0) {
+			result.air_kills++;
+			result.score += 250;
+			message("Diver destroyed!", 3.0f, ui::AMBER);
+		} else {
+			message("Flying bomb destroyed", 3.0f);
+		}
+		return;
+	}
 	update_smoke(v);
-	fx::explosion(this, v.pos, 5.0f, false);
+	fx::explosion(this, v.pos, v.role == 1 ? 8.0f : 5.0f, false);
 	audio::play("explosion", -2.0f + distance_gain(v.pos), grng().range(0.9f, 1.1f));
 
 	if (v.player) {
@@ -532,13 +712,19 @@ void Dogfight::kill(int victim, int attacker) {
 	if (v.team == 1) {
 		if (attacker == 0) {
 			result.air_kills++;
-			result.score += 300;
+			result.score += v.role == 1 ? 450 : 300;
+			if (v.role == 1) {
+				message("Bomber going down!", 3.0f, ui::AMBER);
+				return;
+			}
 			static const char *lines[] = { "Splash one!", "Got him! He's going down!", "Scratch one bandit!",
 				"He's burning!" };
 			message(lines[grng().irange(0, 3)], 3.0f, ui::AMBER);
 		} else if (attacker >= 0) {
 			message(planes[attacker].callsign + String(" got one!"), 3.0f);
 		}
+	} else if (v.role == 1) {
+		message("We lost a Marauder!", 4.0f, ui::RED);
 	} else {
 		message(v.callsign + String(" is hit! He's going down!"), 4.0f, ui::RED);
 	}
@@ -582,6 +768,212 @@ void Dogfight::update_dying(int index, float dt) {
 			a.node->queue_free();
 			a.node = nullptr;
 		}
+	}
+}
+
+// Rear gunners on bombers shoot at fighters sitting behind them.
+void Dogfight::update_gunners(float dt) {
+	Rng &rng = grng();
+	for (int i = 0; i < (int)planes.size(); i++) {
+		Aircraft &b = planes[i];
+		if (!b.alive || b.dying || b.role != 1) {
+			continue;
+		}
+		b.gun_timer -= dt;
+		if (b.gun_timer > 0.0f) {
+			continue;
+		}
+		Vector3 fwd = forward_of(b.basis);
+		int best = -1;
+		float best_d = 420.0f;
+		for (int k = 0; k < (int)planes.size(); k++) {
+			const Aircraft &o = planes[k];
+			if (!o.alive || o.dying || o.team == b.team || o.role != 0) {
+				continue;
+			}
+			Vector3 rel = o.pos - b.pos;
+			float d = rel.length();
+			if (d < best_d && fwd.dot(rel / MAX(d, 1.0f)) < 0.25f) {
+				best_d = d;
+				best = k;
+			}
+		}
+		if (best < 0) {
+			b.gun_timer = 0.3f;
+			continue;
+		}
+		b.gun_timer = rng.range(0.9f, 1.6f);
+		const Aircraft &t = planes[best];
+		Vector3 muzzle = b.pos + b.basis.xform(models::plane_info(b.type).turret);
+		Vector3 aim = t.pos + forward_of(t.basis) * t.speed * (best_d / 600.0f);
+		Vector3 dir = (aim - muzzle).normalized();
+		for (int s = 0; s < 4; s++) {
+			Vector3 d = (dir + rng.in_sphere() * 0.035f).normalized();
+			bullets.fire(muzzle + d * (3.0f + s * 6.0f), d * 600.0f + forward_of(b.basis) * b.speed, 0.7f,
+					b.team == 1 ? 3.0f + def->difficulty * 0.5f : 4.0f, b.team, i);
+		}
+		if (t.player) {
+			enemy_fire_heard = 0.25f;
+		}
+	}
+}
+
+// Variant-specific win and loss conditions.
+void Dogfight::update_objective(float dt) {
+	if (ending || objective_done) {
+		return;
+	}
+	Rng &rng = grng();
+	const Aircraft &player = planes[0];
+	switch (def->variant) {
+		case DF_ESCORT: {
+			// Later waves arrive as the box presses on.
+			if (wave < waves_total) {
+				spawn_timer -= dt;
+				if (spawn_timer <= 0.0f) {
+					Vector3 around;
+					int n = 0;
+					for (const Aircraft &a : planes) {
+						if (a.role == 1 && a.alive) {
+							around += a.pos;
+							n++;
+						}
+					}
+					around = n > 0 ? around / (float)n : player.pos;
+					spawn_wave(2 + def->difficulty / 2 + (wave == 2 ? 1 : 0), around, def->difficulty >= 2);
+					wave++;
+					spawn_timer = 40.0f;
+				}
+			}
+			int alive = 0;
+			float lead_z = 1e9f;
+			for (const Aircraft &a : planes) {
+				if (a.role == 1 && a.alive && !a.dying) {
+					alive++;
+					lead_z = MIN(lead_z, a.pos.z);
+				}
+			}
+			if (alive == 0) {
+				objective_done = true;
+				message("The box is gone. Nothing left to escort.", 5.0f, ui::RED);
+				finish(false, 5.0f);
+			} else if (lead_z < objective_z) {
+				objective_done = true;
+				bool ok = alive * 2 >= bombers_total;
+				message(ok ? "Bombs away! The Marauders are through." : "Bombs away, but the box paid for it.", 5.0f,
+						ok ? ui::AMBER : ui::RED);
+				result.score += ok ? 500 + alive * 100 : alive * 60;
+				finish(ok, 6.0f);
+			} else if (wave >= waves_total && count_alive(1) == 0) {
+				bool falling = false;
+				for (const Aircraft &a : planes) {
+					if (a.team == 1 && a.alive) {
+						falling = true;
+					}
+				}
+				if (!falling) {
+					objective_done = true;
+					bool ok = alive * 2 >= bombers_total;
+					message("The box is clear all the way to the target.", 5.0f, ui::AMBER);
+					result.score += ok ? 500 + alive * 100 : alive * 60;
+					finish(ok, 5.0f);
+				}
+			}
+		} break;
+		case DF_INTERCEPT: {
+			int pending = 0;
+			for (Aircraft &a : planes) {
+				if (a.role != 1) {
+					continue;
+				}
+				if (a.alive && !a.dying && !a.through && a.pos.z > objective_z) {
+					a.through = true;
+					bombers_through++;
+					fx::explosion(this, Vector3(a.pos.x, 2.0f, a.pos.z + 300.0f), 14.0f, true);
+					fx::smoke_column(this, Vector3(a.pos.x, 2.0f, a.pos.z + 300.0f), 6.0f, true);
+					message("A bomber got through to the ships!", 4.0f, ui::RED);
+					a.alive = false;
+					if (a.node) {
+						a.node->queue_free();
+						a.node = nullptr;
+					}
+				}
+				if (a.alive) {
+					pending++;
+				}
+			}
+			if (pending == 0) {
+				objective_done = true;
+				bool ok = bombers_through * 3 <= bombers_total;
+				message(ok ? "That's the last of them. The anchorage is safe." : "Too many got through.", 5.0f,
+						ok ? ui::AMBER : ui::RED);
+				result.score += ok ? 500 : 0;
+				finish(ok, 5.0f);
+			}
+		} break;
+		case DF_DIVER: {
+			if (missiles_spawned < missiles_total) {
+				spawn_timer -= dt;
+				if (spawn_timer <= 0.0f) {
+					spawn_timer = rng.range(11.0f, 16.0f);
+					Vector3 pos(player.pos.x + rng.range(-400.0f, 400.0f), rng.range(550.0f, 750.0f), player.pos.z + 1500.0f);
+					int m = spawn(models::PLANE_V1, mats::PAINT_V1, 1, pos, 0.0f, 0.3f, false, "Diver");
+					planes[m].waypoint = pos + Vector3(rng.range(-600.0f, 600.0f), 0, -40000.0f);
+					planes[m].node->set_transform(Transform3D(planes[m].basis, pos));
+					missiles_spawned++;
+					message("Diver coming through, below and behind!", 3.0f, ui::AMBER);
+				}
+			}
+			for (Aircraft &a : planes) {
+				if (a.role == 2 && a.alive && a.pos.z < player.pos.z - 4500.0f) {
+					a.alive = false;
+					missiles_gone++;
+					if (a.node) {
+						a.node->queue_free();
+						a.node = nullptr;
+					}
+					message("One got away toward London.", 3.0f, ui::RED);
+				}
+			}
+			if (missiles_spawned >= missiles_total && missiles_down + missiles_gone >= missiles_total) {
+				objective_done = true;
+				bool ok = missiles_down * 5 >= missiles_total * 3;
+				message(ok ? "Patrol over. Good shooting." : "Patrol over. Not enough of them stopped.", 5.0f,
+						ok ? ui::AMBER : ui::RED);
+				result.score += ok ? 400 : 0;
+				finish(ok, 5.0f);
+			}
+		} break;
+		default:
+			break;
+	}
+}
+
+String Dogfight::objective_text() const {
+	switch (def->variant) {
+		case DF_ESCORT: {
+			int alive = 0;
+			for (const Aircraft &a : planes) {
+				if (a.role == 1 && a.alive && !a.dying) {
+					alive++;
+				}
+			}
+			return String("MARAUDERS  ") + String::num_int64(alive) + String(" / ") + String::num_int64(bombers_total);
+		}
+		case DF_INTERCEPT: {
+			int down = 0;
+			for (const Aircraft &a : planes) {
+				if (a.role == 1 && (!a.alive || a.dying) && !a.through) {
+					down++;
+				}
+			}
+			return String("BOMBERS DOWN ") + String::num_int64(down) + String("   THROUGH ") + String::num_int64(bombers_through) +
+					String("   OF ") + String::num_int64(bombers_total);
+		}
+		case DF_DIVER:
+			return String("DIVERS DOWN  ") + String::num_int64(missiles_down) + String(" / ") + String::num_int64(missiles_total);
+		default:
+			return String("BANDITS  ") + String::num_int64(count_alive(1));
 	}
 }
 
@@ -659,6 +1051,7 @@ void Dogfight::tick(float dt) {
 		}
 	}
 
+	update_gunners(dt);
 	update_bullets(dt);
 
 	enemy_fire_heard = any_enemy_fire ? 0.25f : enemy_fire_heard - dt;
@@ -670,7 +1063,7 @@ void Dogfight::tick(float dt) {
 	update_camera(dt);
 	update_audio(dt);
 
-	if (!ending && ammo <= 0 && planes[0].alive && !planes[0].dying && count_alive(1) > 0) {
+	if (!ending && def->variant != DF_ESCORT && def->variant != DF_INTERCEPT && ammo <= 0 && planes[0].alive && !planes[0].dying && count_alive(1) > 0) {
 		empty_time += dt;
 		if (empty_time > 5.0f) {
 			bool ok = result.air_kills * 2 >= initial_enemies;
@@ -682,7 +1075,10 @@ void Dogfight::tick(float dt) {
 		}
 	}
 
-	if (!ending && count_alive(1) == 0) {
+	update_objective(dt);
+
+	bool sweep_rules = def->variant != DF_ESCORT && def->variant != DF_INTERCEPT && def->variant != DF_DIVER;
+	if (!ending && sweep_rules && count_alive(1) == 0) {
 		bool all_gone = true;
 		for (const Aircraft &a : planes) {
 			if (a.team == 1 && a.alive) {
@@ -881,6 +1277,9 @@ void Dogfight::draw_hud(Canvas *c) {
 				tri.push_back(s + Vector2(7, -r * 0.7f - 20));
 				c->draw_colored_polygon(tri, col);
 				c->text_shadowed(title, s + Vector2(-60, -r * 0.7f - 26.0f), a.callsign, 20, col, 1, 120);
+				if (a.role == 1) {
+					draw_bar(c, s + Vector2(-20, r * 0.7f + 10.0f), Vector2(40, 6), a.hp / a.max_hp, col, "");
+				}
 			}
 		} else if (enemy && !a.dying && flying) {
 			// Edge arrow pointing toward the bandit.
@@ -947,8 +1346,7 @@ void Dogfight::draw_hud(Canvas *c) {
 	draw_bar(c, Vector2(rx + 220, y - 92), Vector2(220, 30), hp, hp > 0.5f ? Color(0.5f, 0.85f, 0.45f) : (hp > 0.25f ? amber : red), "");
 
 	// Top-right: bandit count and victories.
-	int bandits = count_alive(1);
-	c->text_shadowed(title, Vector2(size.x - 460, 70), String("BANDITS  ") + String::num_int64(bandits), 40, red, 2, 400);
+	c->text_shadowed(title, Vector2(size.x - 760, 70), objective_text(), 40, red, 2, 700);
 	for (int i = 0; i < result.air_kills; i++) {
 		Vector2 at(size.x - 80.0f - i * 40.0f, 110.0f);
 		c->draw_rect(Rect2(at + Vector2(-14, -4), Vector2(28, 8)), white, true);

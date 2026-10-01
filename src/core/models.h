@@ -18,6 +18,9 @@ enum PlaneType {
 	PLANE_P47,
 	PLANE_BF109,
 	PLANE_FW190,
+	PLANE_B26, // twin-engine medium bomber (friendly)
+	PLANE_JU88, // twin-engine bomber (enemy)
+	PLANE_V1, // flying bomb
 };
 
 struct PlaneInfo {
@@ -28,6 +31,7 @@ struct PlaneInfo {
 	Vector3 gun_left;
 	Vector3 gun_right;
 	Vector3 exhaust;
+	Vector3 turret; // rear gun position on bombers (zero if none)
 };
 
 const PlaneInfo &plane_info(PlaneType type);
@@ -38,8 +42,9 @@ Node3D *make_plane(PlaneType type, const Ref<godot::ShaderMaterial> &paint, bool
 
 // Static props, cached by name. Known names:
 // truck, tank, halftrack, flak, staff_car, house, barn, warehouse, factory, church,
-// hangar, tower, fuel_tank, loco, boxcar, tanker, flatcar, tree, poplar, pine, bush,
-// soldier, bomb, bridge, crater, sandbags, tent, crate_stack
+// hangar, tower, fuel_tank, loco, boxcar, tanker, flatcar, flak_wagon, tree, poplar,
+// pine, bush, soldier, bomb, bridge, crater, sandbags, tent, crate_stack, barge,
+// landing_craft, bunker, coastal_gun, mg_nest, chateau, ramp, storage
 Ref<ArrayMesh> mesh(const String &name);
 MeshInstance3D *instance(const String &name);
 

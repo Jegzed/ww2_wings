@@ -83,7 +83,7 @@ public:
 	bool demo = false;
 	// Play a single mission from the menu without touching the campaign.
 	bool instant_action = false;
-	int instant_mission = 0;
+	MissionDef instant = MissionDef(); // the one-off mission being flown
 
 	const MissionDef &current_mission() const;
 	bool campaign_complete() const;

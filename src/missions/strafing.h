@@ -21,6 +21,10 @@ protected:
 private:
 	void layout_convoy(Rng &rng);
 	void layout_airfield(Rng &rng);
+	void layout_train(Rng &rng);
+	void layout_beach(Rng &rng);
+	void layout_barges(Rng &rng);
+	void layout_village(Rng &rng);
 	void scatter_scenery(Rng &rng, float length, float clear_half_width);
 	void add_soldiers(Rng &rng, const Vector3 &at, int count);
 	void fire_guns(float dt, bool firing);
@@ -48,6 +52,8 @@ private:
 	godot::AudioStreamPlayer *snd_gun = nullptr;
 
 	float run_length = 3800.0f;
+	int primary = -1;
+	int loco = -1;
 	float anchor_z = 120.0f;
 	float px = 0.0f;
 	float altitude = 26.0f;

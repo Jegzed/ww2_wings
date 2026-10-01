@@ -22,6 +22,9 @@ enum PaintScheme {
 	PAINT_BF109_GREY, // grey mottled, yellow nose
 	PAINT_BF109_ACE, // darker, red nose
 	PAINT_FW190, // grey-green, yellow undercowl
+	PAINT_B26, // olive drab Marauder
+	PAINT_JU88, // splinter green bomber
+	PAINT_V1, // plain grey flying bomb
 };
 
 // Each call returns a fresh material so per-plane damage can be animated.

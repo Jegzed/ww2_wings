@@ -45,8 +45,15 @@ void Main::parse_args() {
 				shot_times.push_back((float)parts[k].to_float());
 			}
 		} else if (a.begins_with("--mission=")) {
-			gs.instant_mission = (int)a.substr(10).to_int();
-			gs.mission_index = gs.instant_mission;
+			gs.mission_index = (int)a.substr(10).to_int();
+		} else if (a.begins_with("--instant=")) {
+			// --instant=<type>,<variant>[,difficulty]: fly a one-off mission.
+			PackedStringArray parts = a.substr(10).split(",");
+			int type = parts.size() > 0 ? (int)parts[0].to_int() : 0;
+			int variant = parts.size() > 1 ? (int)parts[1].to_int() : 0;
+			int diff = parts.size() > 2 ? (int)parts[2].to_int() : 2;
+			gs.instant_action = true;
+			gs.instant = random_mission((MissionType)CLAMP(type, 0, 2), variant, diff);
 		} else if (a.begins_with("--dump-audio=")) {
 			// Writes every synthesised sound to disk for inspection.
 			String dir = a.substr(13);

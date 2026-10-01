@@ -26,6 +26,10 @@ private:
 		int team = 0;
 		bool player = false;
 		String callsign;
+		int role = 0; // 0 fighter, 1 bomber, 2 flying bomb
+		Vector3 waypoint; // bombers and flying bombs fly straight for this
+		float gun_timer = 0.0f; // rear gunner
+		bool through = false; // reached the objective line
 
 		Vector3 pos;
 		Basis basis;
@@ -82,6 +86,10 @@ private:
 	void update_smoke(Aircraft &a);
 	void update_camera(float dt);
 	void update_audio(float dt);
+	void update_gunners(float dt);
+	void update_objective(float dt);
+	void spawn_wave(int count, const Vector3 &around, bool fw_mix);
+	String objective_text() const;
 	int count_alive(int team) const;
 	float distance_gain(const Vector3 &pos) const;
 
@@ -104,6 +112,19 @@ private:
 	bool player_crashed = false;
 	float victory_delay = 0.0f;
 	float empty_time = 0.0f;
+
+	// Variant bookkeeping.
+	int bombers_total = 0;
+	int bombers_through = 0;
+	int missiles_total = 0;
+	int missiles_spawned = 0;
+	int missiles_down = 0;
+	int missiles_gone = 0;
+	float spawn_timer = 0.0f;
+	int wave = 0;
+	int waves_total = 1;
+	float objective_z = -1e9f;
+	bool objective_done = false;
 };
 
 } // namespace ww2

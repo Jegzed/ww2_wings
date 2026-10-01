@@ -123,6 +123,54 @@ Ref<ShaderMaterial> plane_paint(PaintScheme scheme) {
 			m->set_shader_parameter("rough", 0.6f);
 			m->set_shader_parameter("cockpit_z0", -0.8f);
 		} break;
+		case PAINT_B26: {
+			m->set_shader_parameter("top_color", Color(0.22, 0.25, 0.14));
+			m->set_shader_parameter("bottom_color", Color(0.50, 0.53, 0.55));
+			m->set_shader_parameter("nose_color", Color(0.22, 0.25, 0.14));
+			m->set_shader_parameter("accent_color", Color(0.22, 0.25, 0.14));
+			m->set_shader_parameter("nose_z", -100.0f);
+			m->set_shader_parameter("rudder_z", 100.0f);
+			m->set_shader_parameter("insignia", 1);
+			m->set_shader_parameter("stripes", 1.0f);
+			m->set_shader_parameter("stripe_w", 0.5f);
+			m->set_shader_parameter("stripe_wing_x", 5.6f);
+			m->set_shader_parameter("stripe_fus_z", 3.6f);
+			m->set_shader_parameter("wing_mark", Vector3(8.6f, -0.2f, 0.75f));
+			m->set_shader_parameter("fus_mark", Vector3(6.4f, 0.25f, 0.5f));
+			m->set_shader_parameter("metal", 0.15f);
+			m->set_shader_parameter("rough", 0.62f);
+			m->set_shader_parameter("cockpit_z0", -6.0f);
+		} break;
+		case PAINT_JU88: {
+			m->set_shader_parameter("top_color", Color(0.26, 0.33, 0.24));
+			m->set_shader_parameter("camo_color", Color(0.14, 0.19, 0.14));
+			m->set_shader_parameter("camo", 1.0f);
+			m->set_shader_parameter("bottom_color", Color(0.52, 0.63, 0.68));
+			m->set_shader_parameter("nose_color", Color(0.26, 0.33, 0.24));
+			m->set_shader_parameter("accent_color", Color(0.26, 0.33, 0.24));
+			m->set_shader_parameter("nose_z", -100.0f);
+			m->set_shader_parameter("rudder_z", 100.0f);
+			m->set_shader_parameter("insignia", 2);
+			m->set_shader_parameter("stripes", 0.0f);
+			m->set_shader_parameter("wing_mark", Vector3(7.4f, -0.8f, 0.85f));
+			m->set_shader_parameter("fus_mark", Vector3(3.6f, 0.1f, 0.55f));
+			m->set_shader_parameter("metal", 0.1f);
+			m->set_shader_parameter("rough", 0.62f);
+			m->set_shader_parameter("cockpit_z0", -6.0f);
+		} break;
+		case PAINT_V1: {
+			m->set_shader_parameter("top_color", Color(0.42, 0.45, 0.40));
+			m->set_shader_parameter("bottom_color", Color(0.48, 0.52, 0.50));
+			m->set_shader_parameter("nose_color", Color(0.42, 0.45, 0.40));
+			m->set_shader_parameter("accent_color", Color(0.42, 0.45, 0.40));
+			m->set_shader_parameter("nose_z", -100.0f);
+			m->set_shader_parameter("rudder_z", 100.0f);
+			m->set_shader_parameter("insignia", 0);
+			m->set_shader_parameter("stripes", 0.0f);
+			m->set_shader_parameter("metal", 0.3f);
+			m->set_shader_parameter("rough", 0.55f);
+			m->set_shader_parameter("cockpit_z0", -100.0f);
+		} break;
 		case PAINT_FW190: {
 			m->set_shader_parameter("top_color", Color(0.28, 0.33, 0.30));
 			m->set_shader_parameter("camo_color", Color(0.16, 0.21, 0.18));

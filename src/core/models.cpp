@@ -48,6 +48,19 @@ struct PlaneSpec {
 	bool radial;
 	Vector3 pilot;
 	float canopy_frame_exp;
+
+	// Optional features for bombers and the flying bomb.
+	struct Nacelle {
+		float x, y, z0, z1, r;
+		bool prop;
+	};
+	std::vector<Nacelle> nacelles;
+	std::vector<Station> nose_glass; // glazed nose, lofted like the canopy
+	bool nose_prop = true;
+	bool has_pilot = true;
+	bool has_canopy = true;
+	bool fighter_guns = true;
+	bool turret = false;
 };
 
 PlaneSpec spec_p47() {
@@ -167,15 +180,148 @@ PlaneSpec spec_fw190() {
 	return s;
 }
 
+PlaneSpec spec_b26() {
+	PlaneSpec s;
+	s.fuselage = {
+		{ -8.6f, 0.30f, 0.34f, 0.0f, 2.0f },
+		{ -7.9f, 0.72f, 0.80f, 0.0f, 2.0f },
+		{ -6.4f, 1.02f, 1.10f, 0.0f, 2.2f },
+		{ -3.0f, 1.12f, 1.22f, 0.0f, 2.3f },
+		{ 0.5f, 1.10f, 1.20f, 0.0f, 2.3f },
+		{ 3.5f, 0.92f, 1.05f, 0.08f, 2.2f },
+		{ 6.2f, 0.62f, 0.78f, 0.22f, 2.0f },
+		{ 8.4f, 0.36f, 0.50f, 0.36f, 2.0f },
+		{ 9.3f, 0.10f, 0.20f, 0.42f, 2.0f },
+	};
+	s.canopy = {
+		{ -6.1f, 0.05f, 0.05f, 1.10f, 2.0f },
+		{ -5.6f, 0.70f, 0.42f, 1.14f, 2.6f },
+		{ -4.6f, 0.78f, 0.52f, 1.16f, 2.6f },
+		{ -3.4f, 0.74f, 0.44f, 1.16f, 2.6f },
+		{ -2.6f, 0.05f, 0.05f, 1.12f, 2.0f },
+	};
+	s.nose_glass = {
+		{ -8.55f, 0.30f, 0.34f, 0.0f, 2.0f },
+		{ -8.0f, 0.70f, 0.78f, 0.0f, 2.0f },
+		{ -7.1f, 0.94f, 1.02f, 0.0f, 2.1f },
+		{ -6.5f, 1.00f, 1.08f, 0.0f, 2.1f },
+	};
+	s.wing = { 1.0f, 10.8f, 4.3f, 1.7f, -1.4f, 0.5f, 2.5f, 0.35f, 0.14f, 0.09f, false };
+	s.stab = { 0.2f, 4.0f, 2.0f, 1.0f, 7.6f, 0.3f, 6.0f, 0.55f, 0.10f, 0.08f, false };
+	s.fin = { 0.5f, 3.6f, 2.8f, 1.2f, 7.6f, 0.8f, 0.0f, 0.0f, 0.10f, 0.08f, false };
+	s.nacelles = { { -3.7f, -0.1f, -4.8f, 1.2f, 0.88f, true }, { 3.7f, -0.1f, -4.8f, 1.2f, 0.88f, true } };
+	s.info = { 17.8f, 21.6f, 2.0f, 9.5f, Vector3(-3.7f, -0.1f, -5.0f), Vector3(3.7f, -0.1f, -5.0f),
+		Vector3(0.0f, -0.9f, 2.0f), Vector3(0.0f, 0.55f, 9.0f) };
+	s.nose_z = -100.0f;
+	s.spinner_len = 0.7f;
+	s.spinner_r = 0.34f;
+	s.spinner_color = Color(0.2, 0.22, 0.14);
+	s.prop_tip = Color(0.9, 0.75, 0.1);
+	s.blades = 4;
+	s.radial = true;
+	s.pilot = Vector3(0.0f, 1.42f, -4.4f);
+	s.canopy_frame_exp = 2.6f;
+	s.nose_prop = false;
+	s.fighter_guns = false;
+	s.turret = true;
+	return s;
+}
+
+PlaneSpec spec_ju88() {
+	PlaneSpec s;
+	s.fuselage = {
+		{ -7.0f, 0.55f, 0.62f, 0.05f, 2.2f },
+		{ -6.3f, 0.78f, 0.90f, 0.05f, 2.3f },
+		{ -5.0f, 0.86f, 0.98f, 0.02f, 2.3f },
+		{ -2.0f, 0.86f, 0.96f, 0.0f, 2.3f },
+		{ 1.5f, 0.78f, 0.86f, 0.0f, 2.2f },
+		{ 4.5f, 0.52f, 0.62f, 0.08f, 2.0f },
+		{ 6.8f, 0.26f, 0.36f, 0.18f, 2.0f },
+		{ 7.5f, 0.08f, 0.16f, 0.22f, 2.0f },
+	};
+	s.canopy = {
+		{ -6.8f, 0.05f, 0.05f, 0.62f, 2.0f },
+		{ -6.2f, 0.62f, 0.50f, 0.72f, 2.8f },
+		{ -5.0f, 0.74f, 0.62f, 0.80f, 2.8f },
+		{ -3.8f, 0.72f, 0.56f, 0.80f, 2.8f },
+		{ -3.0f, 0.05f, 0.05f, 0.70f, 2.0f },
+	};
+	s.nose_glass = {
+		{ -7.4f, 0.20f, 0.22f, 0.05f, 2.0f },
+		{ -7.0f, 0.56f, 0.62f, 0.05f, 2.2f },
+		{ -6.4f, 0.74f, 0.84f, 0.05f, 2.3f },
+	};
+	s.wing = { 0.8f, 10.0f, 4.0f, 1.6f, -2.2f, 0.9f, 5.0f, -0.5f, 0.14f, 0.09f, false };
+	s.stab = { 0.2f, 3.6f, 1.8f, 0.9f, 6.2f, 0.3f, 0.0f, 0.4f, 0.10f, 0.08f, false };
+	s.fin = { 0.4f, 2.6f, 2.4f, 1.1f, 6.0f, 0.8f, 0.0f, 0.0f, 0.10f, 0.08f, false };
+	s.nacelles = { { -3.3f, -0.35f, -5.4f, 0.4f, 0.78f, true }, { 3.3f, -0.35f, -5.4f, 0.4f, 0.78f, true } };
+	s.info = { 14.4f, 20.0f, 1.75f, 8.5f, Vector3(-3.3f, -0.35f, -5.6f), Vector3(3.3f, -0.35f, -5.6f),
+		Vector3(0.0f, -0.8f, 1.5f), Vector3(0.0f, 0.75f, -3.6f) };
+	s.nose_z = -100.0f;
+	s.spinner_len = 0.7f;
+	s.spinner_r = 0.32f;
+	s.spinner_color = Color(0.06, 0.07, 0.06);
+	s.prop_tip = Color(0.1, 0.1, 0.1);
+	s.blades = 3;
+	s.radial = false;
+	s.pilot = Vector3(-0.3f, 0.95f, -5.2f);
+	s.canopy_frame_exp = 2.8f;
+	s.nose_prop = false;
+	s.fighter_guns = false;
+	s.turret = true;
+	return s;
+}
+
+PlaneSpec spec_v1() {
+	PlaneSpec s;
+	s.fuselage = {
+		{ -4.2f, 0.04f, 0.04f, 0.0f, 2.0f },
+		{ -3.4f, 0.30f, 0.30f, 0.0f, 2.0f },
+		{ -2.0f, 0.42f, 0.42f, 0.0f, 2.0f },
+		{ 1.2f, 0.42f, 0.42f, 0.0f, 2.0f },
+		{ 3.2f, 0.26f, 0.26f, 0.0f, 2.0f },
+		{ 4.1f, 0.06f, 0.06f, 0.0f, 2.0f },
+	};
+	s.canopy = {};
+	s.wing = { 0.3f, 2.7f, 1.05f, 1.05f, -0.2f, 0.0f, 0.0f, 0.0f, 0.10f, 0.10f, false };
+	s.stab = { 0.2f, 1.1f, 0.7f, 0.5f, 3.2f, 0.0f, 0.0f, 0.05f, 0.10f, 0.08f, false };
+	s.fin = { 0.2f, 0.9f, 0.7f, 0.5f, 3.2f, 0.1f, 0.0f, 0.0f, 0.10f, 0.08f, false };
+	s.nacelles = { { 0.0f, 0.78f, -0.8f, 3.6f, 0.33f, false } };
+	s.info = { 8.3f, 5.4f, 0.0f, 4.0f, Vector3(), Vector3(), Vector3(0.0f, 0.78f, 3.7f), Vector3() };
+	s.nose_z = -100.0f;
+	s.spinner_len = 0.0f;
+	s.spinner_r = 0.0f;
+	s.spinner_color = Color(0.3, 0.3, 0.3);
+	s.prop_tip = Color(0.1, 0.1, 0.1);
+	s.blades = 0;
+	s.radial = false;
+	s.pilot = Vector3();
+	s.canopy_frame_exp = 2.0f;
+	s.nose_prop = false;
+	s.has_pilot = false;
+	s.has_canopy = false;
+	s.fighter_guns = false;
+	return s;
+}
+
 const PlaneSpec &get_spec(PlaneType type) {
 	static PlaneSpec p47 = spec_p47();
 	static PlaneSpec bf109 = spec_bf109();
 	static PlaneSpec fw190 = spec_fw190();
+	static PlaneSpec b26 = spec_b26();
+	static PlaneSpec ju88 = spec_ju88();
+	static PlaneSpec v1 = spec_v1();
 	switch (type) {
 		case PLANE_BF109:
 			return bf109;
 		case PLANE_FW190:
 			return fw190;
+		case PLANE_B26:
+			return b26;
+		case PLANE_JU88:
+			return ju88;
+		case PLANE_V1:
+			return v1;
 		default:
 			return p47;
 	}
@@ -267,8 +413,22 @@ PlaneMeshes build_plane(PlaneType type) {
 	add_wing(paint, s.fin, PART_FIN, false);
 	paint.reset_transform();
 
+	// Engine nacelles (and the flying bomb's pulse jet), painted like the fuselage.
+	for (const PlaneSpec::Nacelle &n : s.nacelles) {
+		std::vector<Ring> rings;
+		const int steps = 6;
+		for (int i = 0; i <= steps; i++) {
+			float t = (float)i / steps;
+			float z = lerpf(n.z0, n.z1, t);
+			float r = n.r * (i == 0 ? 0.82f : (t > 0.6f ? lerpf(1.0f, 0.55f, (t - 0.6f) / 0.4f) : 1.0f));
+			rings.push_back(MeshBuilder::ellipse_ring(Vector3(n.x, n.y, z), Vector3(1, 0, 0), Vector3(0, 1, 0), r, r, 14));
+		}
+		paint.set_color(Color(1, 1, 1, PART_FUSELAGE));
+		paint.loft(rings, true, true);
+	}
+
 	// Canopy framing, painted like the fuselage.
-	{
+	if (s.has_canopy) {
 		paint.set_color(Color(1, 1, 1, PART_FUSELAGE));
 		for (size_t i = 1; i + 1 < s.canopy.size(); i++) {
 			if (i == 3 && s.canopy.size() > 6) {
@@ -289,7 +449,7 @@ PlaneMeshes build_plane(PlaneType type) {
 	// Engine face / intake.
 	float nz = s.nose_z;
 	float front_r = s.fuselage[0].hw * 0.86f;
-	if (s.radial) {
+	if (s.radial && s.nose_prop) {
 		detail.set_color(Color(0.05, 0.05, 0.055));
 		detail.cylinder(Vector3(0, s.fuselage[0].y, nz - 0.01f), Vector3(0, s.fuselage[0].y, nz + 0.05f), front_r,
 				front_r, 20);
@@ -303,7 +463,7 @@ PlaneMeshes build_plane(PlaneType type) {
 	}
 	// Spinner.
 	detail.set_color(s.spinner_color);
-	{
+	if (s.nose_prop) {
 		std::vector<Ring> rings;
 		const int n = 5;
 		for (int i = 0; i <= n; i++) {
@@ -314,9 +474,38 @@ PlaneMeshes build_plane(PlaneType type) {
 		}
 		detail.loft(rings, true, false);
 	}
+	// Nacelle spinners and engine faces.
+	for (const PlaneSpec::Nacelle &n : s.nacelles) {
+		if (!n.prop) {
+			continue;
+		}
+		if (s.radial) {
+			detail.set_color(Color(0.05, 0.05, 0.055));
+			detail.cylinder(Vector3(n.x, n.y, n.z0 - 0.01f), Vector3(n.x, n.y, n.z0 + 0.05f), n.r * 0.8f, n.r * 0.8f, 14);
+		}
+		detail.set_color(s.spinner_color);
+		std::vector<Ring> rings;
+		const int k = 5;
+		for (int i = 0; i <= k; i++) {
+			float t = (float)i / k;
+			float r = s.spinner_r * std::sqrt(MAX(1.0f - t * t, 0.0004f));
+			rings.push_back(MeshBuilder::ellipse_ring(Vector3(n.x, n.y, n.z0 - t * s.spinner_len), Vector3(1, 0, 0),
+					Vector3(0, 1, 0), r, r, 12));
+		}
+		detail.loft(rings, true, false);
+	}
+	// Rear gun position.
+	if (s.turret) {
+		detail.set_color(Color(0.07, 0.08, 0.1));
+		detail.sphere(s.info.turret, Vector3(0.45f, 0.32f, 0.5f), 10, 6);
+		detail.set_color(Color(0.08, 0.08, 0.09));
+		detail.cylinder(s.info.turret, s.info.turret + Vector3(0, 0.25f, 1.1f), 0.04f, 0.03f, 6);
+	}
 	// Guns.
 	detail.set_color(Color(0.08, 0.08, 0.09));
-	if (type == PLANE_P47) {
+	if (!s.fighter_guns) {
+		// Bombers and the flying bomb carry no fixed forward guns.
+	} else if (type == PLANE_P47) {
 		for (int side = -1; side <= 1; side += 2) {
 			for (int g = 0; g < 4; g++) {
 				float x = (2.55f + g * 0.24f) * side;
@@ -347,14 +536,16 @@ PlaneMeshes build_plane(PlaneType type) {
 		}
 	}
 	// Pilot and headrest.
-	detail.set_color(Color(0.28, 0.17, 0.09));
-	detail.sphere(s.pilot, Vector3(0.13f, 0.15f, 0.14f), 8, 6);
-	detail.set_color(Color(0.25, 0.22, 0.15));
-	detail.tapered_box(s.pilot + Vector3(0, -0.34f, 0.02f), Vector3(0.46f, 0.4f, 0.26f), 0.75f, 0.9f);
-	detail.set_color(Color(0.07, 0.07, 0.07));
-	detail.box(s.pilot + Vector3(0, -0.08f, 0.3f), Vector3(0.3f, 0.5f, 0.06f));
-	// Gunsight.
-	detail.box(s.pilot + Vector3(0, -0.06f, -0.8f), Vector3(0.08f, 0.12f, 0.08f));
+	if (s.has_pilot) {
+		detail.set_color(Color(0.28, 0.17, 0.09));
+		detail.sphere(s.pilot, Vector3(0.13f, 0.15f, 0.14f), 8, 6);
+		detail.set_color(Color(0.25, 0.22, 0.15));
+		detail.tapered_box(s.pilot + Vector3(0, -0.34f, 0.02f), Vector3(0.46f, 0.4f, 0.26f), 0.75f, 0.9f);
+		detail.set_color(Color(0.07, 0.07, 0.07));
+		detail.box(s.pilot + Vector3(0, -0.08f, 0.3f), Vector3(0.3f, 0.5f, 0.06f));
+		// Gunsight.
+		detail.box(s.pilot + Vector3(0, -0.06f, -0.8f), Vector3(0.08f, 0.12f, 0.08f));
+	}
 	// Tail wheel nub.
 	detail.set_color(Color(0.05, 0.05, 0.05));
 	detail.cylinder(Vector3(-0.05f, s.fuselage[s.fuselage.size() - 3].y - 0.45f, s.fuselage[s.fuselage.size() - 3].z),
@@ -373,6 +564,13 @@ PlaneMeshes build_plane(PlaneType type) {
 			rings.push_back(station_ring(st, 14));
 		}
 		glass.loft(rings, false, false);
+		if (!s.nose_glass.empty()) {
+			std::vector<Ring> nose;
+			for (const Station &st : s.nose_glass) {
+				nose.push_back(station_ring(st, 16));
+			}
+			glass.loft(nose, true, false);
+		}
 		out.canopy = glass.build(mats::glass(), 60.0f);
 	}
 
@@ -391,7 +589,7 @@ PlaneMeshes build_plane(PlaneType type) {
 	{
 		MeshBuilder blades;
 		blades.set_color(Color(0.06, 0.06, 0.06));
-		for (int i = 0; i < s.blades; i++) {
+		for (int i = 0; i < s.blades && s.nose_prop; i++) {
 			float a = TAU_F * i / s.blades + 0.4f;
 			Transform3D t(Basis(Vector3(0, 0, 1), a), Vector3());
 			blades.set_transform(t * Transform3D(Basis(Vector3(0, 1, 0), 0.5f), Vector3()));
@@ -898,6 +1096,177 @@ void build_crates(MeshBuilder &b) {
 	}
 }
 
+
+void build_flak_wagon(MeshBuilder &b) {
+	rail_wheels(b, -3.2f, 3.2f, 2, 0.5f);
+	b.set_color(Color(0.22, 0.17, 0.12));
+	b.box(Vector3(0, 1.05f, 0), Vector3(2.7f, 0.35f, 9.4f));
+	// Low armoured sides and a gun on a pedestal.
+	b.set_color(C_FELDGRAU);
+	b.box(Vector3(1.25f, 1.6f, 0), Vector3(0.12f, 0.8f, 8.6f));
+	b.box(Vector3(-1.25f, 1.6f, 0), Vector3(0.12f, 0.8f, 8.6f));
+	b.set_color(C_STEEL);
+	b.cylinder(Vector3(0, 1.2f, 0), Vector3(0, 1.7f, 0), 0.9f, 0.8f, 10);
+	b.set_color(C_FELDGRAU);
+	b.tapered_box(Vector3(0, 2.1f, 0.1f), Vector3(1.2f, 0.9f, 1.3f), 0.8f, 0.7f);
+	b.set_color(Color(0.1, 0.1, 0.11));
+	Transform3D t(Basis(Vector3(1, 0, 0), deg2rad(50.0f)), Vector3(0, 2.5f, -0.1f));
+	b.set_transform(t);
+	for (int i = 0; i < 4; i++) {
+		float x = (i % 2 == 0 ? -0.2f : 0.2f);
+		float y = (i / 2 == 0 ? -0.1f : 0.1f);
+		b.cylinder(Vector3(x, y, 0.2f), Vector3(x, y, -2.4f), 0.045f, 0.035f, 6);
+	}
+	b.reset_transform();
+	b.set_color(C_CANVAS);
+	b.box(Vector3(0, 1.45f, 3.6f), Vector3(2.2f, 0.5f, 1.4f)); // ammunition boxes
+}
+
+void build_barge(MeshBuilder &b) {
+	// Rhine-style barge, 26 m, hull sitting in the water.
+	std::vector<Ring> rings;
+	const float zs[] = { -13.0f, -11.0f, -5.0f, 5.0f, 11.0f, 13.0f };
+	const float ws[] = { 1.2f, 2.8f, 3.1f, 3.1f, 2.8f, 1.4f };
+	for (int i = 0; i < 6; i++) {
+		Ring r = {
+			Vector3(-ws[i], 1.3f, zs[i]),
+			Vector3(ws[i], 1.3f, zs[i]),
+			Vector3(ws[i] * 0.85f, -0.6f, zs[i]),
+			Vector3(-ws[i] * 0.85f, -0.6f, zs[i]),
+		};
+		rings.push_back(r);
+	}
+	b.set_color(Color(0.12, 0.12, 0.13));
+	b.loft(rings, true, true);
+	b.set_color(Color(0.35, 0.28, 0.18));
+	b.box(Vector3(0, 1.32f, -1.0f), Vector3(5.6f, 0.1f, 20.0f)); // deck
+	b.set_color(Color(0.30, 0.32, 0.24));
+	b.tapered_box(Vector3(0, 1.9f, -2.0f), Vector3(4.8f, 1.1f, 15.0f), 0.85f, 0.95f); // hatch covers
+	b.set_color(Color(0.55, 0.52, 0.45));
+	b.box(Vector3(0, 2.4f, 9.5f), Vector3(3.6f, 2.2f, 3.4f)); // wheelhouse
+	b.set_color(Color(0.08, 0.1, 0.12));
+	b.box(Vector3(0, 2.8f, 7.78f), Vector3(2.8f, 0.7f, 0.05f));
+	b.set_color(Color(0.1, 0.1, 0.1));
+	b.cylinder(Vector3(0.8f, 3.5f, 10.5f), Vector3(0.8f, 5.0f, 10.5f), 0.18f, 0.16f, 8); // funnel
+}
+
+void build_landing_craft(MeshBuilder &b) {
+	b.set_color(Color(0.36, 0.38, 0.36));
+	b.tapered_box(Vector3(0, 0.6f, 0), Vector3(3.2f, 1.6f, 11.0f), 1.0f, 1.0f);
+	b.set_color(Color(0.3, 0.32, 0.3));
+	b.box(Vector3(1.5f, 1.5f, 0.5f), Vector3(0.15f, 0.9f, 9.0f));
+	b.box(Vector3(-1.5f, 1.5f, 0.5f), Vector3(0.15f, 0.9f, 9.0f));
+	b.tapered_box(Vector3(0, 1.4f, -5.0f), Vector3(3.2f, 1.2f, 0.4f), 1.0f, 1.0f); // ramp
+	b.set_color(Color(0.18, 0.2, 0.18));
+	b.box(Vector3(0, 1.8f, 4.5f), Vector3(1.6f, 1.2f, 1.6f)); // coxswain's box
+}
+
+void build_bunker(MeshBuilder &b) {
+	b.set_color(Color(0.52, 0.52, 0.48));
+	b.tapered_box(Vector3(0, 1.9f, 0), Vector3(11.0f, 3.8f, 8.0f), 0.85f, 0.8f);
+	b.set_color(Color(0.42, 0.42, 0.40));
+	b.tapered_box(Vector3(0, 4.1f, 0), Vector3(9.4f, 0.6f, 6.4f), 0.8f, 0.8f);
+	b.set_color(Color(0.05, 0.05, 0.05));
+	b.box(Vector3(0, 2.4f, -4.02f), Vector3(5.5f, 0.5f, 0.1f)); // embrasure
+	b.set_color(Color(0.3, 0.25, 0.18));
+	b.tapered_box(Vector3(0, 0.6f, 4.8f), Vector3(12.0f, 1.2f, 3.0f), 0.7f, 0.5f); // earth bank
+}
+
+void build_coastal_gun(MeshBuilder &b) {
+	b.set_color(Color(0.5, 0.5, 0.47));
+	b.cylinder(Vector3(0, -0.2f, 0), Vector3(0, 1.4f, 0), 5.2f, 5.2f, 18, false); // pit wall
+	b.set_color(Color(0.3, 0.27, 0.22));
+	b.cylinder(Vector3(0, -0.2f, 0), Vector3(0, 0.05f, 0), 5.0f, 5.0f, 18); // floor
+	b.set_color(C_STEEL);
+	b.cylinder(Vector3(0, 0, 0), Vector3(0, 0.8f, 0), 1.6f, 1.4f, 12);
+	b.set_color(C_FELDGRAU);
+	b.tapered_box(Vector3(0, 1.7f, 0.4f), Vector3(2.6f, 1.6f, 3.0f), 0.8f, 0.7f); // mount / shield
+	b.set_color(Color(0.1, 0.1, 0.11));
+	Transform3D t(Basis(Vector3(1, 0, 0), deg2rad(25.0f)), Vector3(0, 2.2f, -0.5f));
+	b.set_transform(t);
+	b.cylinder(Vector3(0, 0, 0.5f), Vector3(0, 0, -6.5f), 0.22f, 0.16f, 10);
+	b.reset_transform();
+	build_sandbags(b, 6.0f);
+}
+
+void build_mg_nest(MeshBuilder &b) {
+	// A small ring of sandbags with a machine gun.
+	const int n = 9;
+	for (int layer = 0; layer < 2; layer++) {
+		for (int i = 0; i < n; i++) {
+			float a = TAU_F * (i + (layer % 2) * 0.5f) / n;
+			float tone = 0.9f + 0.2f * (float)((i * 5 + layer) % 4) / 4.0f;
+			b.set_color(Color(0.48f * tone, 0.42f * tone, 0.30f * tone));
+			b.set_transform(Transform3D(Basis(Vector3(0, 1, 0), -a), Vector3(std::cos(a) * 1.7f, 0.2f + layer * 0.34f, std::sin(a) * 1.7f)));
+			b.sphere(Vector3(), Vector3(0.3f, 0.2f, 0.55f), 6, 4);
+		}
+	}
+	b.reset_transform();
+	b.set_color(Color(0.1, 0.1, 0.11));
+	b.cylinder(Vector3(0, 0.9f, 0.2f), Vector3(0, 1.0f, -1.6f), 0.05f, 0.04f, 6);
+	b.set_color(C_FELDGRAU);
+	b.tapered_box(Vector3(0, 0.6f, 0.4f), Vector3(0.4f, 0.5f, 0.6f), 0.8f, 0.8f);
+}
+
+void build_chateau(MeshBuilder &b) {
+	// Two storeys, mansard roof, a round tower at each front corner.
+	b.set_color(Color(0.78, 0.74, 0.64));
+	b.box(Vector3(0, 4.5f, 0), Vector3(14.0f, 9.0f, 22.0f));
+	b.set_color(Color(0.20, 0.22, 0.26));
+	b.tapered_box(Vector3(0, 10.6f, 0), Vector3(15.0f, 3.2f, 23.0f), 0.55f, 0.75f);
+	b.box(Vector3(0, 12.6f, 0), Vector3(8.2f, 0.9f, 17.0f));
+	for (int side = -1; side <= 1; side += 2) {
+		windows_row(b, 7.02f * side, 6.6f, -9.0f, 9.0f, 6, Vector3(0.06f, 1.8f, 1.1f));
+		windows_row(b, 7.02f * side, 2.6f, -9.0f, 9.0f, 6, Vector3(0.06f, 1.8f, 1.1f));
+		Vector3 tc(7.2f * side, 0, -11.2f);
+		b.set_color(Color(0.72, 0.68, 0.58));
+		b.cylinder(tc, tc + Vector3(0, 11.0f, 0), 2.4f, 2.4f, 12);
+		b.set_color(Color(0.20, 0.22, 0.26));
+		b.cylinder(tc + Vector3(0, 11.0f, 0), tc + Vector3(0, 16.0f, 0), 2.7f, 0.1f, 12);
+	}
+	b.set_color(Color(0.22, 0.14, 0.08));
+	b.box(Vector3(0, 1.4f, -11.03f), Vector3(2.4f, 2.8f, 0.06f));
+	b.set_color(Color(0.55, 0.5, 0.42));
+	b.box(Vector3(0, 0.15f, -13.0f), Vector3(6.0f, 0.3f, 4.0f)); // steps
+}
+
+void build_ramp(MeshBuilder &b) {
+	// V-1 launching ramp: 48 m of inclined rail on trestles, rising toward -Z.
+	b.set_color(Color(0.45, 0.45, 0.42));
+	b.box(Vector3(0, 0.3f, 0), Vector3(4.5f, 0.6f, 52.0f)); // concrete base
+	const float angle = deg2rad(6.5f);
+	Transform3D t(Basis(Vector3(1, 0, 0), angle), Vector3(0, 1.2f, 0));
+	b.set_transform(t);
+	b.set_color(C_STEEL);
+	b.box(Vector3(-0.6f, 0, 0), Vector3(0.3f, 0.5f, 48.0f));
+	b.box(Vector3(0.6f, 0, 0), Vector3(0.3f, 0.5f, 48.0f));
+	b.box(Vector3(0, 0.1f, 0), Vector3(1.6f, 0.15f, 48.0f));
+	b.reset_transform();
+	for (int i = 0; i < 7; i++) {
+		float z = -21.0f + i * 7.0f;
+		float h = 1.2f - z * std::tan(angle);
+		b.set_color(Color(0.28, 0.29, 0.3));
+		b.box(Vector3(-0.9f, h * 0.5f, z), Vector3(0.2f, h, 0.2f));
+		b.box(Vector3(0.9f, h * 0.5f, z), Vector3(0.2f, h, 0.2f));
+		b.box(Vector3(0, h * 0.5f, z), Vector3(2.0f, 0.15f, 0.15f));
+	}
+	b.set_color(Color(0.2, 0.22, 0.17));
+	b.box(Vector3(0, 1.6f, 27.0f), Vector3(4.0f, 2.6f, 4.0f)); // launch shelter
+}
+
+void build_storage(MeshBuilder &b) {
+	// Long concrete store with a kink at one end, the "ski" of the Noball sites.
+	b.set_color(Color(0.50, 0.50, 0.46));
+	b.tapered_box(Vector3(0, 2.4f, 4.0f), Vector3(6.5f, 4.8f, 52.0f), 0.85f, 1.0f);
+	b.set_transform(Transform3D(Basis(Vector3(0, 1, 0), deg2rad(35.0f)), Vector3(3.5f, 0, -27.0f)));
+	b.tapered_box(Vector3(0, 2.4f, -5.0f), Vector3(6.5f, 4.8f, 14.0f), 0.85f, 1.0f);
+	b.reset_transform();
+	b.set_color(Color(0.42, 0.42, 0.39));
+	b.tapered_box(Vector3(0, 5.0f, 4.0f), Vector3(6.0f, 0.5f, 51.0f), 0.85f, 1.0f);
+	b.set_color(Color(0.3, 0.25, 0.18));
+	b.tapered_box(Vector3(0, 0.6f, 4.0f), Vector3(9.5f, 1.2f, 54.0f), 0.7f, 0.98f); // earth banking
+}
+
 void build_crater(MeshBuilder &b) {
 	// Shallow scorched dish, radius 1.
 	const int n = 18;
@@ -1005,6 +1374,31 @@ Ref<ArrayMesh> build_prop(const String &name) {
 		build_tent(b);
 	} else if (name == "crate_stack") {
 		build_crates(b);
+	} else if (name == "flak_wagon") {
+		build_flak_wagon(b);
+	} else if (name == "barge") {
+		build_barge(b);
+		rough = 0.75f;
+	} else if (name == "landing_craft") {
+		build_landing_craft(b);
+		rough = 0.6f;
+		metal = 0.3f;
+	} else if (name == "bunker") {
+		build_bunker(b);
+		rough = 1.0f;
+	} else if (name == "coastal_gun") {
+		build_coastal_gun(b);
+	} else if (name == "mg_nest") {
+		build_mg_nest(b);
+	} else if (name == "chateau") {
+		build_chateau(b);
+	} else if (name == "ramp") {
+		build_ramp(b);
+		rough = 0.6f;
+		metal = 0.3f;
+	} else if (name == "storage") {
+		build_storage(b);
+		rough = 1.0f;
 	} else if (name == "crater") {
 		build_crater(b);
 		rough = 1.0f;
@@ -1038,11 +1432,32 @@ Node3D *make_plane(PlaneType type, const Ref<ShaderMaterial> &paint, bool spinni
 	body->set_surface_override_material(0, paint);
 	root->add_child(body);
 
-	MeshInstance3D *canopy = memnew(MeshInstance3D);
-	canopy->set_name("Canopy");
-	canopy->set_mesh(m.canopy);
-	canopy->set_cast_shadows_setting(GeometryInstance3D::SHADOW_CASTING_SETTING_OFF);
-	root->add_child(canopy);
+	if (s.has_canopy || !s.nose_glass.empty()) {
+		MeshInstance3D *canopy = memnew(MeshInstance3D);
+		canopy->set_name("Canopy");
+		canopy->set_mesh(m.canopy);
+		canopy->set_cast_shadows_setting(GeometryInstance3D::SHADOW_CASTING_SETTING_OFF);
+		root->add_child(canopy);
+	}
+
+	// Multi-engine types spin a disc on every nacelle.
+	int prop_index = 0;
+	for (const PlaneSpec::Nacelle &n : s.nacelles) {
+		if (!n.prop) {
+			continue;
+		}
+		MeshInstance3D *disc = memnew(MeshInstance3D);
+		disc->set_name(prop_index == 0 ? "Prop" : String("Prop") + String::num_int64(prop_index + 1));
+		disc->set_mesh(m.prop_disc);
+		disc->set_scale(Vector3(s.info.prop_radius, s.info.prop_radius, 1.0f));
+		disc->set_cast_shadows_setting(GeometryInstance3D::SHADOW_CASTING_SETTING_OFF);
+		disc->set_position(Vector3(n.x, n.y, n.z0 - s.spinner_len * 0.45f));
+		root->add_child(disc);
+		prop_index++;
+	}
+	if (!s.nose_prop) {
+		return root;
+	}
 
 	MeshInstance3D *prop = memnew(MeshInstance3D);
 	prop->set_name("Prop");

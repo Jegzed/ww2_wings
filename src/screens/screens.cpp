@@ -260,7 +260,10 @@ void MenuScreen::on_instant(int mission) {
 		gs.load();
 	}
 	gs.instant_action = true;
-	gs.instant_mission = mission;
+	MissionType type = (MissionType)CLAMP(mission, 0, 2);
+	int count = type == MISSION_DOGFIGHT ? DF_VARIANT_COUNT : (type == MISSION_BOMBING ? BM_VARIANT_COUNT : ST_VARIANT_COUNT);
+	int variant = grng().irange(0, count - 1);
+	gs.instant = random_mission(type, variant, grng().irange(2, 3));
 	main->go(SCREEN_BRIEFING);
 }
 
@@ -460,6 +463,9 @@ void DiaryScreen::_ready() {
 	Label *where = ui::label(m.location, ui::font_hand(), 28, Color(0.1f, 0.14f, 0.32f, 0.8f));
 	place(page, where, Vector2(92, 152));
 
+	if (String(m.diary).is_empty()) {
+		main->go(SCREEN_BRIEFING, 0.01f);
+	}
 	body = ui::label(String::utf8(m.diary), ui::font_hand(), 33, ui::INK_BLUE);
 	body->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	body->add_theme_constant_override("line_spacing", 9);
@@ -516,7 +522,7 @@ void BriefingScreen::_ready() {
 	place(page, rule, Vector2(64, 142), Vector2(712, 3));
 
 	place(page, ui::label(String("MISSION:  ") + String(m.title).to_upper(), ui::font_type(), 28, ui::INK), Vector2(66, 166));
-	place(page, ui::label(String("TYPE:     ") + mission_type_name(m.type), ui::font_type(), 28, ui::INK), Vector2(66, 206));
+	place(page, ui::label(String("TYPE:     ") + mission_type_name(m.type) + String("  -  ") + String(variant_name(m.type, m.variant)).to_upper(), ui::font_type(), 28, ui::INK), Vector2(66, 206));
 	place(page, ui::label(String("AREA:     ") + String(m.location).to_upper(), ui::font_type(), 28, ui::INK), Vector2(66, 246));
 
 	Label *text = ui::label(String::utf8(m.briefing), ui::font_type(), 26, ui::INK);
@@ -607,22 +613,18 @@ void BriefingScreen::draw_map(Canvas *c) {
 	struct Spot {
 		float x, y;
 	};
-	const Spot targets[] = { { 655, 190 }, { 610, 380 }, { 400, 400 }, { 290, 385 }, { 385, 440 }, { 520, 450 } };
-	GameState &gs = GameState::get();
-	int idx = gs.instant_action ? gs.instant_mission : gs.mission_index;
-	idx = CLAMP(idx, 0, 5);
-	Vector2 base = idx >= 3 ? Vector2(300, 372) : Vector2(415, 120);
-	Vector2 target(targets[idx].x, targets[idx].y);
-	if (idx == 3) {
-		base = Vector2(330, 368);
-		target = Vector2(285, 330);
+	(void)sizeof(Spot);
+	Vector2 base = m.from_normandy ? Vector2(300, 372) : Vector2(415, 120);
+	Vector2 target(m.map_x * 800.0f, m.map_y * 600.0f);
+	if (target.distance_to(base) < 60.0f) {
+		target = base + (target - base).normalized() * 60.0f;
 	}
 
 	c->draw_circle(base, 8.0f, Color(0.1f, 0.14f, 0.32f));
-	c->text(hand, base + Vector2(14, -8), idx >= 3 ? "A-6 strip" : "Ashford", 24, ui::INK_BLUE);
+	c->text(hand, base + Vector2(14, -8), m.from_normandy ? "A-6 strip" : "Ashford", 24, ui::INK_BLUE);
 
 	// Animated route.
-	Vector2 mid = (base + target) * 0.5f + Vector2(-40, 30);
+	Vector2 mid = (base + target) * 0.5f + Vector2(-40, 30) * (base.y < target.y ? 1.0f : -1.0f);
 	const int n = 40;
 	float reveal = saturate(clock / 1.6f);
 	Vector2 prev = base;

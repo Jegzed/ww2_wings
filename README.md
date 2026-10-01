@@ -6,11 +6,14 @@ moved from the Great War to the Second World War. Written in C++ for Godot 4.7 (
 You fly a P-47 Thunderbolt with the 406th Fighter Squadron. Between sorties you read your
 pilot's diary; in the air you play one of three mini-games, as in the original:
 
-| Mini-game | View | What you do |
+| Mini-game | View | Variants |
 |---|---|---|
-| **Air combat** | 3D chase camera | Dogfight Bf 109s and Fw 190s alongside your wingmen |
-| **Bombing** | Top-down | Lead your bombs onto rail yards and bridges while dodging flak |
-| **Ground attack** | Isometric | Strafe convoys and airfields at tree-top height |
+| **Air combat** | 3D chase camera | Fighter sweep, bomber escort (B-26), intercept (Ju 88s with gunners), V-1 "Diver" patrol, ambush, duel with an ace |
+| **Bombing** | Top-down | Rail yard, bridge, moving column, harbour, V-1 launch site, airfield |
+| **Ground attack** | Isometric | Convoy, airfield, train busting, coastal battery, river barges, village headquarters |
+
+The campaign is 18 missions long (June 2nd to July 18th, 1944) and uses every variant; **Instant Action**
+on the menu picks a random variant, time of day and weather.
 
 Around them sits the career: create a pilot and spend points on four aptitudes
 (Flying, Shooting, Mechanical, Stamina), earn promotions and medals, and — if your luck runs
@@ -68,10 +71,12 @@ The game can drive itself, which is how it is tested:
 
 ```
 ./shot.sh mission "5,10,20" 2 strafe   # autopilot the 3rd mission, save screenshots to ./shots
+godot --path game -- --shot=mission --instant=0,3 --times=10   # one-off mission: type 0-2, variant 0-5
 ./shot.sh viewer                        # line up every procedural model
 godot --path game -- --tour --out=C:/some/dir   # play the whole campaign unattended
 ```
 
 ## Status
 
-Vertical slice: a six-mission campaign (two of each mini-game) with the full career loop.
+Vertical slice plus content expansion: an 18-mission campaign covering 18 mission variants, with the
+full career loop. Difficulty has been tuned against the built-in autopilot only.

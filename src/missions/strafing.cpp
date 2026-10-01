@@ -46,6 +46,9 @@ void Strafing::scatter_scenery(Rng &rng, float length, float clear_half_width) {
 		if (std::fabs(p.x) < LATERAL_LIMIT + 12.0f || std::fabs(p.x) < clear_half_width) {
 			continue;
 		}
+		if (def->variant == ST_BEACH && p.x < 60.0f) {
+			continue;
+		}
 		bool blocked = false;
 		for (const GroundTarget &t : ground.targets) {
 			float reach = MAX(t.hx, t.hz) + 6.0f;
@@ -221,6 +224,191 @@ void Strafing::layout_airfield(Rng &rng) {
 	(void)parked;
 }
 
+
+void Strafing::layout_train(Rng &rng) {
+	run_length = 3400.0f;
+	// The train runs the same way you fly, so you overtake it slowly.
+	const float train_speed = 13.0f;
+	float z = -620.0f;
+	loco = ground.add("loco", Vector3(0, 0, z), 0.0f, true);
+	ground.targets[loco].speed = train_speed;
+	const char *cars[] = { "boxcar", "flatcar", "flak_wagon", "tanker", "boxcar", "boxcar", "tanker", "flatcar", "boxcar" };
+	for (int i = 0; i < 9; i++) {
+		int idx = ground.add(cars[i], Vector3(0, 0, z + 12.4f + i * 10.6f), 0.0f, true);
+		ground.targets[idx].speed = train_speed;
+	}
+	// A halt with a goods shed and a road crossing.
+	ground.add("warehouse", Vector3(26.0f, 0, -1900.0f), 0.0f, true);
+	ground.add("house", Vector3(-30.0f, 0, -1860.0f), 90.0f, false);
+	ground.add("truck", Vector3(22.0f, 0, -1950.0f), 0.0f, true);
+	ground.add("truck", Vector3(22.0f, 0, -1962.0f), 0.0f, true);
+	ground.add("flak", Vector3(-28.0f, 0, -1920.0f), rng.range(0, 360.0f), true);
+	for (int s = 0; s < 4; s++) {
+		float z0 = -300.0f - s * 800.0f;
+		for (int i = 0; i < 10; i++) {
+			if (rng.chance(0.8f)) {
+				ground.add("poplar", Vector3(16.0f + rng.range(-0.5f, 0.5f), 0, z0 - i * 26.0f), rng.range(0, 360.0f), false);
+			}
+			if (rng.chance(0.5f)) {
+				ground.add("tree", Vector3(-19.0f + rng.range(-3.0f, 3.0f), 0, z0 - i * 26.0f - 10.0f), rng.range(0, 360.0f), false);
+			}
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		ground.add("house", Vector3(side * rng.range(34.0f, 48.0f), 0, -900.0f - i * 700.0f), rng.range(-20.0f, 20.0f), false);
+	}
+	int flak = def->difficulty / 2;
+	for (int i = 0; i < flak; i++) {
+		ground.add("flak", Vector3((i % 2 == 0 ? 1.0f : -1.0f) * rng.range(26.0f, 36.0f), 0, -1200.0f - i * 900.0f), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(0.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 2.6f);
+	mat->set_shader_parameter("strip_a_kind", 2);
+	mat->set_shader_parameter("strip_b", Vector4(0.0f, -1930.0f, 1.0f, 0.0f));
+	mat->set_shader_parameter("strip_b_width", 3.5f);
+	mat->set_shader_parameter("strip_b_kind", 1);
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
+void Strafing::layout_beach(Rng &rng) {
+	run_length = 3000.0f;
+	// Sea to the west of the flight line, bunkers in the dunes to the east.
+	for (int i = 0; i < 6; i++) {
+		float z = -400.0f - i * 440.0f + rng.range(-40.0f, 40.0f);
+		ground.add("bunker", Vector3(rng.range(30.0f, 40.0f), 0, z), -90.0f + rng.range(-15.0f, 15.0f), false);
+		ground.add("coastal_gun", Vector3(rng.range(44.0f, 52.0f), 0, z + rng.range(40.0f, 70.0f)), rng.range(0, 360.0f), true);
+		ground.add("mg_nest", Vector3(rng.range(8.0f, 20.0f), 0, z + rng.range(-60.0f, 60.0f)), 0.0f, true);
+		if (rng.chance(0.6f)) {
+			ground.add("mg_nest", Vector3(rng.range(14.0f, 26.0f), 0, z - rng.range(80.0f, 140.0f)), 0.0f, true);
+		}
+		ground.add("truck", Vector3(rng.range(52.0f, 62.0f), 0, z + rng.range(100.0f, 140.0f)), rng.range(0, 360.0f), true);
+		if (rng.chance(0.5f)) {
+			ground.add("tent", Vector3(rng.range(56.0f, 66.0f), 0, z + rng.range(150.0f, 190.0f)), rng.range(0, 360.0f), true);
+		}
+		add_soldiers(rng, Vector3(rng.range(4.0f, 12.0f), 0, z + 20.0f), rng.irange(4, 8));
+	}
+	// Wrecked landing craft in the surf, and the rest of the fleet beyond.
+	for (int i = 0; i < 10; i++) {
+		ground.add("landing_craft", Vector3(rng.range(-70.0f, -40.0f), -0.6f, -200.0f - i * 300.0f + rng.range(-80.0f, 80.0f)),
+				rng.range(-60.0f, 60.0f), false);
+	}
+	int flak = 1 + def->difficulty / 2;
+	for (int i = 0; i < flak; i++) {
+		ground.add("flak", Vector3(rng.range(48.0f, 60.0f), 0, -700.0f - i * 1000.0f), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("coast_x", -24.0f);
+	mat->set_shader_parameter("river_amount", 0.0f);
+	mat->set_shader_parameter("strip_a", Vector4(70.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 3.2f);
+	mat->set_shader_parameter("strip_a_kind", 1);
+}
+
+void Strafing::layout_barges(Rng &rng) {
+	run_length = 3400.0f;
+	// Traffic on the river coming up toward you, and ferries tied up under the banks.
+	for (int i = 0; i < 9; i++) {
+		float z = -500.0f - i * 330.0f + rng.range(-60.0f, 60.0f);
+		int idx = ground.add("barge", Vector3(rng.range(-9.0f, 9.0f), 0, z), 180.0f + rng.range(-6.0f, 6.0f), true);
+		ground.targets[idx].speed = -rng.range(2.5f, 4.5f);
+		if (rng.chance(0.5f)) {
+			ground.add("barge", Vector3(rng.chance(0.5f) ? -15.0f : 15.0f, 0, z - 120.0f), rng.range(-8.0f, 8.0f), true);
+		}
+	}
+	// Crossing points: trucks queued on the banks.
+	for (int i = 0; i < 4; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		float z = -800.0f - i * 700.0f;
+		for (int k = 0; k < 3; k++) {
+			ground.add("truck", Vector3(side * (28.0f + k * 7.0f), 0, z + k * 3.0f), side > 0 ? -90.0f : 90.0f, true);
+		}
+		ground.add("mg_nest", Vector3(side * 26.0f, 0, z - 40.0f), 0.0f, true);
+	}
+	// Trees down to the water on both banks.
+	for (int s = 0; s < 6; s++) {
+		float z0 = -200.0f - s * 560.0f - rng.range(0.0f, 120.0f);
+		for (int i = 0; i < 8; i++) {
+			for (int side = -1; side <= 1; side += 2) {
+				if (rng.chance(0.65f)) {
+					ground.add(rng.chance(0.5f) ? "tree" : "poplar", Vector3(side * rng.range(24.0f, 34.0f), 0, z0 - i * 28.0f),
+							rng.range(0, 360.0f), false);
+				}
+			}
+		}
+	}
+	int flak = 1 + def->difficulty / 2;
+	for (int i = 0; i < flak; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		ground.add("flak", Vector3(side * rng.range(36.0f, 46.0f), 0, -1100.0f - i * 900.0f), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(0.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 21.0f);
+	mat->set_shader_parameter("strip_a_kind", 5);
+	mat->set_shader_parameter("strip_b", Vector4(40.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_b_width", 3.0f);
+	mat->set_shader_parameter("strip_b_kind", 1);
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
+void Strafing::layout_village(Rng &rng) {
+	run_length = 3200.0f;
+	const float hq_z = -1900.0f;
+	primary = ground.add("chateau", Vector3(44.0f, 0, hq_z), -90.0f, true);
+	ground.targets[primary].primary = true;
+	// Staff cars and radio trucks in the yard, sentries in the gardens.
+	for (int i = 0; i < 3; i++) {
+		ground.add("staff_car", Vector3(24.0f + i * 5.0f, 0, hq_z + 18.0f + (i % 2) * 6.0f), rng.range(-20.0f, 20.0f), true);
+	}
+	for (int i = 0; i < 3; i++) {
+		ground.add("truck", Vector3(26.0f + i * 6.0f, 0, hq_z - 22.0f), 90.0f, true);
+	}
+	ground.add("halftrack", Vector3(20.0f, 0, hq_z + 40.0f), 0.0f, true);
+	ground.add("mg_nest", Vector3(18.0f, 0, hq_z - 40.0f), 0.0f, true);
+	ground.add("mg_nest", Vector3(30.0f, 0, hq_z + 60.0f), 0.0f, true);
+	add_soldiers(rng, Vector3(14.0f, 0, hq_z + 10.0f), 6);
+	// The village: houses crowding the road, the church at the far end.
+	for (int i = 0; i < 12; i++) {
+		float side = (i % 2 == 0) ? 1.0f : -1.0f;
+		float z = -1500.0f - i * 55.0f;
+		if (side > 0 && z < hq_z + 80.0f && z > hq_z - 80.0f) {
+			continue; // the chateau grounds
+		}
+		ground.add(rng.chance(0.75f) ? "house" : "barn", Vector3(side * rng.range(22.0f, 34.0f), 0, z), rng.range(-15.0f, 15.0f), false);
+	}
+	ground.add("church", Vector3(-38.0f, 0, -2250.0f), 0.0f, false);
+	for (int i = 0; i < 3; i++) {
+		ground.add("tree", Vector3(rng.range(-46.0f, -36.0f), 0, -1400.0f - i * 300.0f), rng.range(0, 360.0f), false);
+	}
+	// Traffic on the road in and out.
+	for (int i = 0; i < 4; i++) {
+		int idx = ground.add(rng.chance(0.3f) ? "staff_car" : "truck", Vector3(rng.range(-1.0f, 1.0f), 0, -600.0f - i * 90.0f), 0.0f, true);
+		ground.targets[idx].speed = 6.0f;
+	}
+	for (int i = 0; i < 3; i++) {
+		ground.add("truck", Vector3(rng.range(-1.0f, 1.0f), 0, -2600.0f - i * 40.0f), 0.0f, true);
+	}
+	add_soldiers(rng, Vector3(6.0f, 0, -1150.0f), 8);
+	int flak = 1 + def->difficulty / 2;
+	for (int i = 0; i < flak; i++) {
+		ground.add("flak", Vector3((i % 2 == 0 ? -1.0f : 1.0f) * rng.range(26.0f, 40.0f), 0, -1300.0f - i * 1000.0f), rng.range(0, 360.0f), true);
+	}
+
+	Ref<ShaderMaterial> mat = terrain->get_mesh()->surface_get_material(0);
+	mat->set_shader_parameter("strip_a", Vector4(0.0f, 0.0f, 0.0f, -1.0f));
+	mat->set_shader_parameter("strip_a_width", 4.2f);
+	mat->set_shader_parameter("strip_a_kind", 1);
+	mat->set_shader_parameter("strip_b", Vector4(0.0f, hq_z + 90.0f, 1.0f, 0.0f));
+	mat->set_shader_parameter("strip_b_width", 3.0f);
+	mat->set_shader_parameter("strip_b_kind", 1);
+	mat->set_shader_parameter("river_amount", 0.0f);
+}
+
 void Strafing::build() {
 	GameState &gs = GameState::get();
 
@@ -237,6 +425,7 @@ void Strafing::build() {
 	terrain = build_terrain(this, terrain_mat, 12000.0f);
 	terrain_mat->set_shader_parameter("field_scale", 95.0f);
 	terrain_mat->set_shader_parameter("wood_amount", 0.0f);
+	opt.cloud_cover = def->cloud_cover;
 
 	ground.setup(this);
 	ground.fx_scale = 1.0f;
@@ -264,11 +453,28 @@ void Strafing::build() {
 
 	Rng rng(211 + def->variant * 23);
 	float clear = 0.0f;
-	if (def->variant == 1) {
-		layout_airfield(rng);
-		clear = 200.0f;
-	} else {
-		layout_convoy(rng);
+	switch (def->variant) {
+		case ST_AIRFIELD:
+			layout_airfield(rng);
+			clear = 200.0f;
+			break;
+		case ST_TRAIN:
+			layout_train(rng);
+			break;
+		case ST_BEACH:
+			layout_beach(rng);
+			clear = 90.0f;
+			break;
+		case ST_BARGES:
+			layout_barges(rng);
+			break;
+		case ST_VILLAGE:
+			layout_village(rng);
+			break;
+		case ST_CONVOY:
+		default:
+			layout_convoy(rng);
+			break;
 	}
 	scatter_scenery(rng, run_length, clear);
 
@@ -324,10 +530,17 @@ void Strafing::build() {
 // ---------------------------------------------------------------------------
 
 int Strafing::required() const {
-	return MAX(1, (int)std::ceil(ground.total() * 0.5f));
+	float share = (def->variant == ST_VILLAGE || def->variant == ST_TRAIN) ? 0.4f : 0.5f;
+	return MAX(1, (int)std::ceil(ground.total() * share));
 }
 
 bool Strafing::objective_met() const {
+	if (primary >= 0 && ground.targets[primary].alive) {
+		return false;
+	}
+	if (loco >= 0 && ground.targets[loco].alive) {
+		return false;
+	}
 	return ground.destroyed() >= required();
 }
 
@@ -661,6 +874,13 @@ void Strafing::tick(float dt) {
 	plane->set_rotation(Vector3(pitch, 0.0f, bank));
 	plane->set_scale(Vector3(PLANE_SCALE, PLANE_SCALE, PLANE_SCALE));
 
+	if (loco >= 0 && !ground.targets[loco].alive) {
+		for (GroundTarget &t : ground.targets) {
+			if (t.speed > 0.0f && t.kind != "soldier") {
+				t.speed = MAX(t.speed - 5.0f * dt, 0.0f);
+			}
+		}
+	}
 	ground.update(dt);
 	update_soldiers(dt);
 	fire_guns(dt, fire);
@@ -787,6 +1007,16 @@ void Strafing::draw_hud(Canvas *c) {
 	int need = required();
 	c->text_shadowed(title, Vector2(size.x - 560, 70), String("TARGETS  ") + String::num_int64(got) + String(" / ") + String::num_int64(need),
 			40, got >= need ? ui::AMBER : white, 2, 500);
+	if (primary >= 0) {
+		const GroundTarget &pt = ground.targets[primary];
+		c->text_shadowed(title, Vector2(size.x - 560, 130), pt.alive ? "HEADQUARTERS STANDING" : "HEADQUARTERS DESTROYED", 26,
+				pt.alive ? red : ui::AMBER, 2, 500);
+		draw_bar(c, Vector2(size.x - 400, 140), Vector2(340, 10), pt.alive ? pt.hp / pt.max_hp : 0.0f, red, "");
+	} else if (loco >= 0) {
+		const GroundTarget &lt = ground.targets[loco];
+		c->text_shadowed(title, Vector2(size.x - 560, 130), lt.alive ? "LOCOMOTIVE RUNNING" : "TRAIN STOPPED", 26,
+				lt.alive ? red : ui::AMBER, 2, 500);
+	}
 	draw_bar(c, Vector2(size.x - 400, 86), Vector2(340, 16), (float)got / MAX(need, 1), ui::AMBER, "");
 
 	float progress = saturate(-anchor_z / run_length);

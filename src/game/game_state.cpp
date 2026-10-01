@@ -42,9 +42,11 @@ void GameState::destroy() {
 }
 
 const MissionDef &GameState::current_mission() const {
+	if (instant_action) {
+		return instant;
+	}
 	const std::vector<MissionDef> &c = campaign();
-	int idx = instant_action ? instant_mission : mission_index;
-	idx = CLAMP(idx, 0, (int)c.size() - 1);
+	int idx = CLAMP(mission_index, 0, (int)c.size() - 1);
 	return c[idx];
 }
 
@@ -82,24 +84,36 @@ void GameState::apply_result(MissionResult &r) {
 		}
 	};
 
+	// Decorations are meant to be earned over a career, not handed out per sortie.
 	if (r.wounded || r.killed) {
 		p.wounds += 1;
 		award("Purple Heart");
 	}
-	if (p.missions >= 3 || p.air_kills >= 1) {
+	if (p.missions >= 6 && p.air_kills + p.ground_kills / 8 >= 3) {
 		award("Air Medal");
 	}
-	if (p.air_kills >= 5) {
+	if (p.air_kills >= 8 || (p.air_kills >= 5 && p.ground_kills >= 60)) {
 		award("Distinguished Flying Cross");
 	}
-	if (r.success && !r.shot_down && (r.air_kills >= 3 || (r.targets_total > 0 && r.targets_destroyed >= r.targets_total))) {
+	const MissionDef &def = current_mission();
+	bool outstanding = r.success && !r.shot_down && def.difficulty >= 3 &&
+			(r.air_kills >= 4 || (r.targets_total > 0 && r.targets_destroyed >= r.targets_total + 2));
+	if (outstanding) {
 		award("Silver Star");
 	}
-	if (p.ground_kills >= 100) {
+	if (p.ground_kills >= 150 && p.missions >= 10) {
 		award("Distinguished Unit Citation");
 	}
 
 	int new_rank = rank_for_score(p.score);
+	// Score alone is not enough: each grade needs missions flown as well.
+	static const int missions_needed[] = { 0, 4, 8, 13, 18 };
+	while (new_rank > 0 && p.missions < missions_needed[new_rank]) {
+		new_rank--;
+	}
+	if (new_rank > p.rank + 1) {
+		new_rank = p.rank + 1; // one step at a time
+	}
 	if (new_rank > p.rank && !r.killed) {
 		p.rank = new_rank;
 		r.promoted = true;

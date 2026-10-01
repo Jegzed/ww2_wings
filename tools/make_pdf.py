@@ -209,7 +209,7 @@ caption(c, 'The main menu. The flight of Thunderbolts behind it is rendered live
 
 # fact strip
 fy = 108
-facts = [('3', 'mini-games'), ('6', 'missions'), ('4', 'pilot aptitudes'), ('5', 'decorations'), ('0', 'art or sound files')]
+facts = [('3', 'mini-games'), ('18', 'mission variants'), ('18', 'campaign missions'), ('4', 'pilot aptitudes'), ('0', 'art or sound files')]
 fw = (W - 2 * M) / len(facts)
 c.setStrokeColor(RULE)
 c.setLineWidth(0.6)
@@ -261,12 +261,13 @@ minigame('Mini-game one', 'Air combat',
              "Roll toward the enemy, then pull. Banked wings carry the nose around, and the aircraft eases "
              "back to level when you let go of the stick.",
              "A <b>lead marker</b> shows where to shoot; brackets, range and edge arrows keep track of every bandit.",
-             "A radar disc shows who is around you and whether they are above or below.",
              "Damaged aircraft trail smoke, handle worse and finally go down burning.",
              "Ammunition is limited. Run dry and you break off for home.",
+             "<b>Six variants:</b> fighter sweep, escorting B-26 Marauders, intercepting Ju 88s with tail gunners, "
+             "chasing V-1 flying bombs, being bounced from behind, and a duel with an ace.",
          ],
-         'dog_3.png', 'A Bf 109 goes down trailing smoke through the cloud tops.',
-         'dog_2.png', 'Two bandits bracketed ahead. Distant aircraft are drawn larger than life so they can be seen and fought.',
+         'dog_3.png', 'Escort duty: a box of B-26 Marauders with the Thunderbolts above them.',
+         'dog_2.png', 'Contacts are bracketed with their range; friendly aircraft are marked in blue. Distant aircraft are drawn larger than life.',
          "Wings showed its dogfights from behind the pilot's head. The idea is kept; the view is pulled back "
          "to a modern chase camera.")
 
@@ -277,7 +278,8 @@ minigame('Mini-game two', 'Bombing',
              "Rolling stock, warehouses and fuel dumps burn, and fuel sets off whatever stands next to it.",
              "Flak is aimed at where you are going to be. Keep moving.",
              "Miss the objective and you can come around for one more pass.",
-             "Two missions: the marshalling yard at Amiens and the bridge over the Orne.",
+             "<b>Six variants:</b> rail yard, bridge, a moving armoured column, a harbour full of barges, "
+             "a V-1 launch site under heavy flak, and an airfield.",
          ],
          'bomb_3.png', 'A stick of bombs walks through the rail yard at Amiens.',
          'bomb_1.png', 'A goods train caught on the main line on the way in.',
@@ -292,9 +294,10 @@ minigame('Mini-game three', 'Ground attack',
              "Low is also where the poplars, barns and church towers are. Hit one and you may not get a second chance.",
              "Your shadow on the ground is the best guide to your height.",
              "Trucks burn easily; tanks shrug off most of what you throw at them.",
-             "Two missions: the Caen road on D-Day and the airfield at Evreux.",
+             "<b>Six variants:</b> convoy, airfield, train busting, a coastal battery among bunkers and surf, "
+             "barges on the Seine, and a headquarters in a village.",
          ],
-         'field_0.png', 'Evreux airfield at dusk. A parked fighter goes up beside the runway.',
+         'field_0.png', 'The coastal battery: bunkers in the dunes, wrecked landing craft in the surf.',
          'strafe_1.png', 'A flak position beside the Caen road, about to be hit.',
          "Wings flew its strafing runs diagonally across an isometric landscape, with height as the second "
          "axis. That is unchanged.")
@@ -345,40 +348,55 @@ yy = para(c, "Progress is saved after every sortie.", x2, yy - 10, colw)
 doc.end()
 
 # ---------------------------------------------------------------- campaign
-y = doc.start('The campaign', 'Six days in June')
-y = para(c, "The slice contains two missions of each kind, rising in difficulty. Any of the three mini-games can "
-            "also be started straight from the menu as <b>Instant Action</b>, which does not affect your career.",
-         M, y, W - 2 * M - 120)
-head = ParagraphStyle('th', parent=P_CELL, fontName=HEAD, fontSize=9, textColor=MUTED)
-data = [[Paragraph(h, head) for h in ['DATE', 'MISSION', 'TYPE', 'WHERE', 'OBJECTIVE', 'DIFFICULTY']]]
+y = doc.start('The campaign', 'Seven weeks over Normandy')
+y = para(c, "Eighteen missions from the eve of the invasion to the Seine, each a different variant. Any of the three "
+            "mini-games can also be started from the menu as <b>Instant Action</b>, which picks a random variant, "
+            "time of day and weather and does not touch your career.", M, y, W - 2 * M - 120)
+P_ROW = ParagraphStyle('row', parent=P_CELL, fontSize=8.6, leading=10.5)
+P_ROW_B = ParagraphStyle('rowb', parent=P_ROW, fontName=BODY_B)
+head = ParagraphStyle('th', parent=P_ROW, fontName=HEAD, fontSize=8, textColor=MUTED)
 missions = [
-    ('June 2nd', 'Fighter Sweep', 'Air combat', 'Pas-de-Calais', 'Destroy the enemy fighters', 1),
-    ('June 4th', 'The Rail Yard', 'Bombing', 'Amiens', 'Destroy rolling stock and warehouses', 1),
-    ('June 6th', 'D-Day', 'Ground attack', 'Road to Caen', 'Destroy the convoy', 2),
-    ('June 10th', 'Bandits over the Beachhead', 'Air combat', 'Sainte-Mere-Eglise', 'Destroy the enemy fighters', 3),
-    ('June 14th', 'The Bridge', 'Bombing', 'River Orne', 'Destroy the bridge', 3),
-    ('June 18th', 'Airfield Attack', 'Ground attack', 'Evreux', 'Destroy parked aircraft and fuel', 4),
+    ('June 2', 'Fighter Sweep', 'Air combat', 'Sweep', 'Pas-de-Calais', 1),
+    ('June 4', 'The Rail Yard', 'Bombing', 'Rail yard', 'Amiens', 1),
+    ('June 6', 'D-Day', 'Ground attack', 'Convoy', 'Road to Caen', 2),
+    ('June 7', 'Little Friends', 'Air combat', 'Bomber escort', 'Caen', 2),
+    ('June 9', 'The Battery', 'Ground attack', 'Coastal battery', 'Utah Beach', 2),
+    ('June 10', 'Bandits over the Beachhead', 'Air combat', 'Sweep', 'Sainte-Mere-Eglise', 3),
+    ('June 12', 'Train Busting', 'Ground attack', 'Train', 'Lisieux', 2),
+    ('June 14', 'The Bridge', 'Bombing', 'Bridge', 'River Orne', 3),
+    ('June 16', 'Bombers Inbound', 'Air combat', 'Intercept', 'The anchorage', 3),
+    ('June 18', 'Airfield Attack', 'Ground attack', 'Airfield', 'Evreux', 4),
+    ('June 20', 'Noball', 'Bombing', 'Launch site', 'Saint-Omer', 3),
+    ('June 23', 'Diver Patrol', 'Air combat', 'V-1 patrol', 'Kent coast', 3),
+    ('June 26', 'The Harbour', 'Bombing', 'Harbour', 'Le Havre', 3),
+    ('June 30', 'Jumped', 'Air combat', 'Ambush', 'Falaise', 4),
+    ('July 4', 'The Headquarters', 'Ground attack', 'Village HQ', 'Villers-Bocage', 3),
+    ('July 8', 'Column on the Move', 'Bombing', 'Moving column', 'Saint-Lo', 3),
+    ('July 12', 'The Red-Nosed 109', 'Air combat', 'Duel', 'Caen', 5),
+    ('July 18', 'River Traffic', 'Ground attack', 'River barges', 'The Seine', 4),
 ]
-for d, m, t_, w_, o, k in missions:
-    dots = '<font color="#C98A1B">' + '\u25A0' * k + '</font><font color="#CFC7B0">' + '\u25A0' * (5 - k) + '</font>'
-    data.append([Paragraph(d, P_CELL), Paragraph(m, P_CELL_B), Paragraph(t_, P_CELL), Paragraph(w_, P_CELL),
-                 Paragraph(o, P_CELL), Paragraph(dots, ParagraphStyle('d', parent=P_CELL, fontName='Helvetica'))])
-tw = W - 2 * M
-t = Table(data, colWidths=[72, 178, 96, 128, tw - 72 - 178 - 96 - 128 - 86, 86])
-t.setStyle(TableStyle([
-    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ('LINEBELOW', (0, 0), (-1, 0), 1.2, INK),
-    ('LINEBELOW', (0, 1), (-1, -1), 0.5, RULE),
-    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-    ('TOPPADDING', (0, 0), (-1, -1), 9),
-    ('BOTTOMPADDING', (0, 0), (-1, -1), 9),
-]))
-_, th = t.wrapOn(c, tw, 1000)
-t.drawOn(c, M, y - 22 - th)
-yy = y - 22 - th - 26
-para(c, "In the second air combat mission Focke-Wulf 190s join the Bf 109s and you fly with two wingmen "
-        "instead of one. The later bombing and ground attack missions face heavier flak.",
-     M, yy, W - 2 * M - 120, P_SMALL)
+half = 9
+cols_w = [38, 92, 54, 62, 62, 50]
+tw = sum(cols_w)
+for col in range(2):
+    data = [[Paragraph(h, head) for h in ['DATE', 'MISSION', 'TYPE', 'VARIANT', 'WHERE', 'DIFF.']]]
+    for d, m, t_, v_, w_, k in missions[col * half:(col + 1) * half]:
+        dots = '<font color="#C98A1B">' + '\u25A0' * k + '</font><font color="#CFC7B0">' + '\u25A0' * (5 - k) + '</font>'
+        data.append([Paragraph(d, P_ROW), Paragraph(m, P_ROW_B), Paragraph(t_, P_ROW), Paragraph(v_, P_ROW),
+                     Paragraph(w_, P_ROW), Paragraph(dots, ParagraphStyle('d', parent=P_ROW, fontName='Helvetica'))])
+    t = Table(data, colWidths=cols_w)
+    t.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.0, INK),
+        ('LINEBELOW', (0, 1), (-1, -1), 0.4, RULE),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    _, th = t.wrapOn(c, tw, 1000)
+    x = M + col * (tw + 30)
+    t.drawOn(c, x, y - 18 - th)
 doc.end()
 
 # ---------------------------------------------------------------- controls and running

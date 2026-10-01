@@ -28,14 +28,16 @@ void Viewer::_ready() {
 	terrain_mat->set_shader_parameter("strip_b", Vector4(0.0f, 170.0f, 1.0f, 0.0f));
 	terrain_mat->set_shader_parameter("strip_b_width", 2.2f);
 	terrain_mat->set_shader_parameter("strip_b_kind", 2);
+	terrain_mat->set_shader_parameter("coast_x", -120.0f);
 
 	Rng rng(42);
 	build_clouds(this, rng, 40, 3000.0f, 500.0f, 900.0f, 120.0f);
 
-	const models::PlaneType types[] = { models::PLANE_P47, models::PLANE_BF109, models::PLANE_FW190, models::PLANE_P47 };
+	const models::PlaneType types[] = { models::PLANE_P47, models::PLANE_BF109, models::PLANE_FW190, models::PLANE_P47,
+		models::PLANE_B26, models::PLANE_JU88, models::PLANE_V1 };
 	const mats::PaintScheme paints[] = { mats::PAINT_P47_SILVER, mats::PAINT_BF109_GREY, mats::PAINT_FW190,
-		mats::PAINT_P47_OLIVE };
-	for (int i = 0; i < 4; i++) {
+		mats::PAINT_P47_OLIVE, mats::PAINT_B26, mats::PAINT_JU88, mats::PAINT_V1 };
+	for (int i = 0; i < 7; i++) {
 		Node3D *p = models::make_plane(types[i], mats::plane_paint(paints[i]), true);
 		add_child(p);
 		p->set_position(Vector3(i * 22.0f, 60.0f, 0.0f));
@@ -52,7 +54,8 @@ void Viewer::_ready() {
 
 	const char *names[] = { "truck", "staff_car", "halftrack", "tank", "flak", "soldier", "tent", "crate_stack",
 		"house", "barn", "church", "warehouse", "factory", "hangar", "tower", "fuel_tank",
-		"tree", "poplar", "pine", "bush", "bomb", "crater" };
+		"tree", "poplar", "pine", "bush", "bomb", "crater", "flak_wagon", "barge", "landing_craft", "bunker",
+		"coastal_gun", "mg_nest", "chateau", "ramp", "storage" };
 	float x = 0.0f;
 	for (const char *n : names) {
 		MeshInstance3D *mi = models::instance(n);
@@ -103,6 +106,12 @@ void Viewer::set_shot(int index) {
 		{ Vector3(-38.0f, 5.0f, 84.0f), Vector3(-38.0f, 2.0f, 100.0f) },
 		{ Vector3(0.0f, 600.0f, 0.0f), Vector3(200.0f, 0.0f, 300.0f) },
 		{ Vector3(100.0f, 400.0f, 200.0f), Vector3(100.0f, 0.0f, 199.0f) },
+		{ Vector3(74.0f, 66.0f, -24.0f), Vector3(88.0f, 60.0f, 0.0f) },
+		{ Vector3(122.0f, 65.0f, -20.0f), Vector3(110.0f, 60.0f, 0.0f) },
+		{ Vector3(139.0f, 62.0f, -9.0f), Vector3(132.0f, 60.0f, 0.0f) },
+		{ Vector3(400.0f, 26.0f, 52.0f), Vector3(440.0f, 3.0f, 100.0f) },
+		{ Vector3(520.0f, 30.0f, 40.0f), Vector3(575.0f, 3.0f, 100.0f) },
+		{ Vector3(-40.0f, 45.0f, 40.0f), Vector3(-170.0f, 0.0f, 110.0f) },
 	};
 	const int count = (int)(sizeof(views) / sizeof(views[0]));
 	const View &v = views[index % count];

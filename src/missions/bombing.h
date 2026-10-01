@@ -30,6 +30,10 @@ private:
 
 	void layout_rail_yard(Rng &rng);
 	void layout_bridge(Rng &rng);
+	void layout_convoy(Rng &rng);
+	void layout_harbour(Rng &rng);
+	void layout_launch_site(Rng &rng);
+	void layout_airfield(Rng &rng);
 	void scatter_scenery(Rng &rng, float length);
 	void add_farm(Rng &rng, const Vector3 &at);
 	void add_village(Rng &rng, const Vector3 &at, bool church);
